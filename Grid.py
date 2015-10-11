@@ -1,14 +1,9 @@
 from kivy.app import App
-from kivy.uix.label import Label
-from kivy.uix.gridlayout import GridLayout
 from kivy.core.window import Window
-from kivy.uix.toggleSquare import ToggleSquare
-from kivy.uix.behaviors import DragBehavior
-from kivy.input.motionevent import MotionEvent
 from kivy.uix.widget import Widget
-from kivy.graphics import *
 from math import ceil
 from collections import namedtuple
+from kivy.graphics import *
 
 SquareSize=32 #Size of each Square
 marginSize=1 #Size between the Squares
@@ -22,7 +17,6 @@ MarginColorToggled=(.5,.5,.5)
 RectColorToggled=(.25,.25,.25)
 RectColorNormal=(0,0,0)
    
-
 def findSquare(pos,allowRepeats): #Finds the Square at the given coords
     x=pos[0]
     y=pos[1]
@@ -31,6 +25,25 @@ def findSquare(pos,allowRepeats): #Finds the Square at the given coords
         if i["pos"].x<=x<=i["pos"].x+i["size"].x and i["pos"].y<=y<=i["pos"].y+i["size"].y and (i!=lastSquare or allowRepeats):
             lastSquare=i
             return i
+
+def updateRect(self,touch,isTouchDown,foundSquare):
+    global lastSquare,lastColor,MarginColorNormal,MarginColorToggled,RectColorNormal,RectColorToggled
+    if foundSquare is None:
+        foundSquare=findSquare(touch.pos,isTouchDown)
+    if foundSquare is not None: #If it found a NEW square (if it's the same, it returns None
+        foundSquare["colored"]=lastColor
+        with self.canvas: #Re-draw the rectangle to be changed
+            if foundSquare["colored"]:
+                Color(*MarginColorToggled)
+            else:
+                Color(*MarginColorNormal)
+            Rectangle(pos=(foundSquare["pos"].x,foundSquare["pos"].y),size=(foundSquare["size"].x,foundSquare["size"].y))
+            if foundSquare["colored"]:
+                Color(*RectColorToggled)
+            else:
+                Color(*RectColorNormal)
+            Rectangle(pos=(foundSquare["pos"].x,foundSquare["pos"].y),size=(foundSquare["size"].x-marginSize,foundSquare["size"].y-marginSize))
+
         
 class GridWidget(Widget):
     def __init__(self,**kwargs):
@@ -45,41 +58,16 @@ class GridWidget(Widget):
                     Rectangle(pos=(x*(SquareSize+marginSize),y*(SquareSize+marginSize)),size=(SquareSize,SquareSize))
 
     def on_touch_down(self, touch):
-        global lastSquare,lastColor,MarginColorNormal,MarginColorToggled,RectColorNormal,RectColorToggled
+        global lastColor
         foundSquare=findSquare(touch.pos,True)
-        if foundSquare is not None: #If it found a NEW square (if it's the same, it returns None
-            foundSquare["colored"]=not foundSquare["colored"]
-            lastColor=foundSquare["colored"] #This mimics Pathfinding.js's behavior. It works nicely.
-            with self.canvas: #Re-draw the rectangle to be changed
-                if foundSquare["colored"]:
-                    Color(*MarginColorToggled)
-                else:
-                    Color(*MarginColorNormal)
-                Rectangle(pos=(foundSquare["pos"].x,foundSquare["pos"].y),size=(foundSquare["size"].x,foundSquare["size"].y))
-                if foundSquare["colored"]:
-                    Color(*RectColorToggled)
-                else:
-                    Color(*RectColorNormal)
-                Rectangle(pos=(foundSquare["pos"].x,foundSquare["pos"].y),size=(foundSquare["size"].x-marginSize,foundSquare["size"].y-marginSize))
-
-        
-    def on_touch_move(self, touch): #See on_touch_down, the only change is below.
-        global lastSquare
-        foundSquare=findSquare(touch.pos,False) #This boolean means it will not let you hit the same square twice.
         if foundSquare is not None:
-            foundSquare["colored"]=lastColor 
-            with self.canvas:
-                if foundSquare["colored"]:
-                    Color(*MarginColorToggled)
-                else:
-                    Color(*MarginColorNormal)
-                Rectangle(pos=(foundSquare["pos"].x,foundSquare["pos"].y),size=(foundSquare["size"].x,foundSquare["size"].y))
-                if foundSquare["colored"]:
-                    Color(*RectColorToggled)
-                else:
-                    Color(*RectColorNormal)
-                Rectangle(pos=(foundSquare["pos"].x,foundSquare["pos"].y),size=(foundSquare["size"].x-marginSize,foundSquare["size"].y-marginSize))
+            lastColor=not foundSquare["colored"] #This mimics Pathfinding.js's behavior.
+        #It's a bit awkward because I had two nearly identical functions, which I made into one, so this logic had to be put here.
+        updateRect(self,touch,True,foundSquare)
         
+    def on_touch_move(self, touch):
+        updateRect(self,touch,False,None)
+               
 class OtherGrid(App):
     def build(self):
         return GridWidget()
