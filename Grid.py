@@ -68,9 +68,9 @@ class GridWidget(Widget):
     def on_touch_move(self, touch):
         updateRect(self,touch,False,None)
                
-class OtherGrid(App):
+class Grid(App):
     def build(self):
         return GridWidget()
 
 if __name__== "__main__":
-    OtherGrid().run()
+    Grid().run()
