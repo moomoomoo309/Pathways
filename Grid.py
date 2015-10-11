@@ -16,6 +16,10 @@ buttonList=[]
 Point=namedtuple("Point", "x y")
 lastButton={"pos":(0,0),"size":(0,0),"colored":False}
 lastColor=True
+MarginColorNormal=(1,1,1)
+MarginColorToggled=(.5,.5,.5)
+RectColorToggled=(.25,.25,.25)
+RectColorNormal=(0,0,0)
    
 
 def findButton(pos,allowRepeats):
@@ -33,29 +37,28 @@ class GridWidget(Widget):
         for x in range(0,int(ceil(Window.width/squareSize))+1):
             for y in range(0,int(ceil(Window.height/squareSize))+1):
                 with self.canvas:
-                    Color(1,1,1)
+                    Color(*MarginColorNormal)
                     buttonList.append({"pos":Point(x*(squareSize+marginSize),y*(squareSize+marginSize)),"size":Point(squareSize+marginSize,squareSize+marginSize),"colored":False})
                     Rectangle(pos=(x*(squareSize+marginSize),y*(squareSize+marginSize)),size=(squareSize+marginSize,squareSize+marginSize))
-                    Color(0,0,0)
+                    Color(*RectColorNormal)
                     Rectangle(pos=(x*(squareSize+marginSize),y*(squareSize+marginSize)),size=(squareSize,squareSize))
 
     def on_touch_down(self, touch):
-        global lastButton
-        global lastColor
+        global lastButton,lastColor,MarginColorNormal,MarginColorToggled,RectColorNormal,RectColorToggled
         foundButton=findButton(touch.pos,True)
         if foundButton is not None:
             foundButton["colored"]=not foundButton["colored"]
             lastColor=foundButton["colored"]
             with self.canvas:
                 if foundButton["colored"]:
-                    Color(.5,.5,.5)
+                    Color(*MarginColorToggled)
                 else:
-                    Color(1,1,1)
+                    Color(*MarginColorNormal)
                 Rectangle(pos=(foundButton["pos"].x,foundButton["pos"].y),size=(foundButton["size"].x,foundButton["size"].y))
                 if foundButton["colored"]:
-                    Color(.25,.25,.25)
+                    Color(*RectColorToggled)
                 else:
-                    Color(0,0,0)
+                    Color(*RectColorNormal)
                 Rectangle(pos=(foundButton["pos"].x,foundButton["pos"].y),size=(foundButton["size"].x-marginSize,foundButton["size"].y-marginSize))
 
         
