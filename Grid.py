@@ -4,9 +4,11 @@ from kivy.uix.widget import Widget
 from math import ceil
 from collections import namedtuple
 from kivy.graphics import *
+from OpenGL.GL.glget import glGetInteger
+from kivy.base import stopTouchApp
 
 SquareSize=32 #Size of each Square
-marginSize=1 #Size between the Squares
+MarginSize=1 #Size between the Squares
 SquareList=[]
 Point=namedtuple("Point", "x y")
 lastSquare={"pos":(0,0),"size":(0,0),"colored":False} #Not as pretty as a Lua table, but it works.
@@ -16,18 +18,20 @@ MarginColorNormal=(1,1,1)
 MarginColorToggled=(.5,.5,.5)
 RectColorToggled=(.25,.25,.25)
 RectColorNormal=(0,0,0)
+ManualMonitorSize=(1680,1050)
    
 def findSquare(pos,allowRepeats): #Finds the Square at the given coords
     x=pos[0]
     y=pos[1]
-    global lastSquare
+    global lastSquare,SquareList
     for i in SquareList:
         if i["pos"].x<=x<=i["pos"].x+i["size"].x and i["pos"].y<=y<=i["pos"].y+i["size"].y and (i!=lastSquare or allowRepeats):
             lastSquare=i
             return i
-
+        
+        
 def updateRect(self,touch,isTouchDown,foundSquare):
-    global lastSquare,lastColor,MarginColorNormal,MarginColorToggled,RectColorNormal,RectColorToggled
+    global lastSquare,lastColor,SquareList
     if foundSquare is None:
         foundSquare=findSquare(touch.pos,isTouchDown)
     if foundSquare is not None: #If it found a NEW square (if it's the same, it returns None
@@ -42,21 +46,31 @@ def updateRect(self,touch,isTouchDown,foundSquare):
                 Color(*RectColorToggled)
             else:
                 Color(*RectColorNormal)
-            Rectangle(pos=(foundSquare["pos"].x,foundSquare["pos"].y),size=(foundSquare["size"].x-marginSize,foundSquare["size"].y-marginSize))
+            Rectangle(pos=(foundSquare["pos"].x,foundSquare["pos"].y),size=(foundSquare["size"].x-MarginSize,foundSquare["size"].y-MarginSize))
 
-        
+
+def drawGrid(self,width,height):
+    global SquareList
+    for x in range(0,int(ceil(width/SquareSize))):
+        for y in range(0,int(ceil(height/SquareSize))+1):
+            with self.canvas:
+                testSquare=findSquare((x*SquareSize*3/2,y*SquareSize*3/2),True)
+                if testSquare is None:
+                    Color(*MarginColorNormal)
+                    SquareList.append({"pos":Point(x*(SquareSize+MarginSize),y*(SquareSize+MarginSize)),"size":Point(SquareSize+MarginSize,SquareSize+MarginSize),"colored":False})
+                    Rectangle(pos=(x*(SquareSize+MarginSize),y*(SquareSize+MarginSize)),size=(SquareSize+MarginSize,SquareSize+MarginSize))
+                    Color(*RectColorNormal)
+                    Rectangle(pos=(x*(SquareSize+MarginSize),y*(SquareSize+MarginSize)),size=(SquareSize,SquareSize))
+                    
+
 class GridWidget(Widget):
     def __init__(self,**kwargs):
         super(GridWidget,self).__init__(**kwargs) #Don't ask why you need this line. You just do.
-        for x in range(0,int(ceil(Window.width/SquareSize))+1):
-            for y in range(0,int(ceil(Window.height/SquareSize))+1):
-                with self.canvas:
-                    Color(*MarginColorNormal)
-                    SquareList.append({"pos":Point(x*(SquareSize+marginSize),y*(SquareSize+marginSize)),"size":Point(SquareSize+marginSize,SquareSize+marginSize),"colored":False})
-                    Rectangle(pos=(x*(SquareSize+marginSize),y*(SquareSize+marginSize)),size=(SquareSize+marginSize,SquareSize+marginSize))
-                    Color(*RectColorNormal)
-                    Rectangle(pos=(x*(SquareSize+marginSize),y*(SquareSize+marginSize)),size=(SquareSize,SquareSize))
-
+        if ManualMonitorSize is None:
+            drawGrid(self,Window.width,Window.height)
+        else:
+            drawGrid(self,*ManualMonitorSize)
+        
     def on_touch_down(self, touch):
         global lastColor
         foundSquare=findSquare(touch.pos,True)
@@ -67,6 +81,7 @@ class GridWidget(Widget):
         
     def on_touch_move(self, touch):
         updateRect(self,touch,False,None)
+
                
 class Grid(App):
     def build(self):
