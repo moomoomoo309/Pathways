@@ -4,8 +4,6 @@ from kivy.uix.widget import Widget
 from math import ceil
 from collections import namedtuple
 from kivy.graphics import *
-from OpenGL.GL.glget import glGetInteger
-from kivy.base import stopTouchApp
 
 SquareSize=32 #Size of each Square
 MarginSize=1 #Size between the Squares
@@ -21,14 +19,12 @@ RectColorNormal=(0,0,0)
 ManualMonitorSize=(1680,1050)
    
 def findSquare(pos,allowRepeats): #Finds the Square at the given coords
-    x=pos[0]
-    y=pos[1]
     global lastSquare,SquareList
     for i in SquareList:
-        if i["pos"].x<=x<=i["pos"].x+i["size"].x and i["pos"].y<=y<=i["pos"].y+i["size"].y and (i!=lastSquare or allowRepeats):
+        if i["pos"].x<=pos[0]<=i["pos"].x+i["size"].x and i["pos"].y<=pos[1]<=i["pos"].y+i["size"].y and (i!=lastSquare or allowRepeats):
             lastSquare=i
             return i
-        
+
         
 def updateRect(self,touch,isTouchDown,foundSquare):
     global lastSquare,lastColor,SquareList
