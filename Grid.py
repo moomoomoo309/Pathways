@@ -19,6 +19,7 @@ RectColorNormal=(0,0,0)
 ManualMonitorSize=(1680,1050) #Size of your monitor, so when the window is maximized, the grid will scale. Set to None if you want it to just use the default window size
    
 def findSquare(pos,allowRepeats): #Finds the Square at the given coords
+    global lastSquare
     for i in SquareList:
         if i["pos"].x<=pos[0]<=i["pos"].x+i["size"].x and i["pos"].y<=pos[1]<=i["pos"].y+i["size"].y and (i!=lastSquare or allowRepeats):
             lastSquare=i
@@ -46,6 +47,7 @@ def updateRect(self,touch,isTouchDown,foundSquare):
 
 
 def drawGrid(self,width,height):
+    global SquareList
     for x in range(0,int(ceil(width/SquareSize))):
         for y in range(0,int(ceil(height/SquareSize))+1):
             with self.canvas:
@@ -70,6 +72,7 @@ class GridWidget(Widget):
             drawGrid(self,*ManualMonitorSize) #Otherwise, use the window size given.
         
     def on_touch_down(self, touch):
+        global lastColor
         foundSquare=findSquare(touch.pos,True)
         if foundSquare is not None:
             lastColor=not foundSquare["colored"] #This mimics Pathfinding.js's behavior.
