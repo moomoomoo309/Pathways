@@ -65,11 +65,11 @@ def drawGrid(self, width, height):
                     Rectangle(pos=(x * (SquareSize + MarginSize), y * (SquareSize + MarginSize)), size=(SquareSize, SquareSize))
                     # Draw the actual rectangle
 
-Builder.load_string('''
+Builder.load_string('''  
 <test>:
     Label:
         text: "Hi!"
-''')                    
+''')         # used for accessing .kv file for manual editing of various class attributes          
 
 class GridWidget(Widget):
     def __init__(self, **kwargs):
@@ -90,31 +90,26 @@ class GridWidget(Widget):
     def on_touch_move(self, touch):
         updateRect(self, touch, False, None)
 
-class myLayout(BoxLayout):
+'''class myLayout(BoxLayout):     #lays out two buttons horizontally, takes up entire window
     def __init__(self, **kwargs):
         super(myLayout, self).__init__(**kwargs)
         
-        btn1 = Button(text="Place Start Point",
+        btn1 = Button(text="Place Start Point",       #button 1 for start point
                        background_color=(0, 2, 0, 1))
-        btn2 = Button(text="Place End Point",
+        btn2 = Button(text="Place End Point",         #button 2 for end point
                        background_color=(1, 0, 2, 1))
         btn1.bind(on_press=self.clk)
         btn2.bind(on_press=self.clk)
         self.add_widget(btn1)
         self.add_widget(btn2)
        
-    def clk(self, obj):
-        print("Hello!")   
+    def clk(self, obj):     #clk should allow a special point to appear that can be dragged
+        print("Hello!")''' 
 
 
 class Grid(App):
     def build(self):
         return GridWidget()
-
-class Buttons(App):
-    def build(self):
-        mL = myLayout(padding=70)
-        return mL    
 
 if __name__ == "__main__":
     Grid().run()
