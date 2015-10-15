@@ -90,15 +90,17 @@ class GridWidget(Widget):
     def on_touch_move(self, touch):
         updateRect(self, touch, False, None)
 
-'''class myLayout(BoxLayout):     #lays out two buttons horizontally, takes up entire window
+#This will eventually be used for the buttons to switch the algorithm or start pathfinding using RelativeLayout
+
+'''class myLayout(BoxLayout):     #Lays out two buttons horizontally, takes up entire window
     def __init__(self, **kwargs):
-        super(myLayout, self).__init__(**kwargs)
+        super(myLayout, self).__init__(**kwargs)   #Still don't know why you need this, but you do.
         
-        btn1 = Button(text="Place Start Point",       #button 1 for start point
+        btn1 = Button(text="Place Start Point",       #Button 1 for start point
                        background_color=(0, 2, 0, 1))
-        btn2 = Button(text="Place End Point",         #button 2 for end point
+        btn2 = Button(text="Place End Point",         #Button 2 for end point
                        background_color=(1, 0, 2, 1))
-        btn1.bind(on_press=self.clk)
+        btn1.bind(on_press=self.clk)   #Runs clk on mouse down
         btn2.bind(on_press=self.clk)
         self.add_widget(btn1)
         self.add_widget(btn2)
