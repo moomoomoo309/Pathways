@@ -142,8 +142,8 @@ class GridWidget(Widget):
         rawStartCoord=Window.width/3 #Put it 1/3 the way in visual space horizontally
         rawEndCoord=Window.width*2/3 #Same as above, but 2/3 horizontally
         rawHeight=Window.height/2 #Put both halfway in visual space
-        StartSquarePos=Point(*getSquareCoords((rawStartCoord,rawHeight)))
-        EndSquarePos=Point(*getSquareCoords((rawEndCoord,rawHeight)))
+        StartSquarePos=getSquareCoords((rawStartCoord,rawHeight))
+        EndSquarePos=getSquareCoords((rawEndCoord,rawHeight))
         if ManualMonitorSize is None:
             drawGrid(self, Window.width, Window.height)  # Use the window size if a resolution is not provided
         else:
