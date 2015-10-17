@@ -1,7 +1,6 @@
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
-from math import ceil
 from collections import namedtuple
 from kivy.graphics import *
 #We'll import these when they're needed.
@@ -31,7 +30,7 @@ RectColorToggled = (.25, .25, .25)
 RectColorNormal = (0, 0, 0)
 RectSize = (SquareSize + MarginSize, SquareSize + MarginSize)
 GrabbedEndPoint = None  #True for start, False for end, None for neither
-ManualMonitorSize = None  #Size of your monitor, so when the window is maximized, the grid will scale.
+ManualMonitorSize = (1680,1050)  #Size of your monitor, so when the window is maximized, the grid will scale.
 #Set to None if you want it to just use the default window size
 
 
@@ -125,8 +124,8 @@ def updateStartAndEnd(self, touch):
 
 def drawGrid(self, width, height):
     global SquareList
-    for x in range(0, int(ceil(width / SquareSize))):
-        for y in range(0, int(ceil(height / SquareSize)) + 1):
+    for x in range(0, int(width / SquareSize) ):
+        for y in range(0, int(height / SquareSize)):
             with self.canvas:
                 testSquare = findSquare((x * SquareSize * 3 / 2, y * SquareSize * 3 / 2),
                                         True)  #Make sure there isn't already a square at the given coordinates
