@@ -2,36 +2,40 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
 from collections import namedtuple
+from collections import deque
 from kivy.graphics import *
+from math import sqrt
 #We'll import these when they're needed.
 #from kivy.uix.button import Button
-#from kivy.uix.boxlayout import BoxLayout
-#from kivy.lang import Builder
+#from kivy.uix.relativelayout import RelativeLayout
+#from kivy.uix.splitter import Splitter
 
 SquareSize = 32  #Size of each Square
-MarginSize = 2  #Size between the Squares
+MarginSize = 2  #Size of space between the Squares
 SquareList = []
 Point = namedtuple("Point", "x y")
 lastSquare = {"pos": (0, 0), "size": (0, 0), "colored": False}  #Not as pretty as a Lua table, but it works.
 lastColor = True
 
 #The color format is in RGB, 1 being 255, 0 being 0.
-StartSquarePos = None  #It'll be initialized later.
+StartSquarePos = None  #Position values are set when App builds and runs, based on window size. 
 EndSquarePos = None
 LastStartSquarePos = None
 LastEndSquarePos = None
+#rgb values in tuples for various rectangle states
 StartColorNormal = (0, 1, 0)
-StartColorMargin = (.75, 1, .75)
+StartColorMargin = (0, .75, 1)
 EndColorNormal = (1, 0, 0)
-EndColorMargin = (1, .75, .75)
-MarginColorNormal = (1, 1, 1)
+EndColorMargin = (0, .75, 1)
+MarginColorNormal = (0, .75, 1)
 MarginColorToggled = (.5, .5, .5)
-RectColorToggled = (.25, .25, .25)
-RectColorNormal = (0, 0, 0)
+RectColorToggled = (.4, .4, .4)
+RectColorNormal = (1, 1, 1)
 RectSize = (SquareSize + MarginSize, SquareSize + MarginSize)
 GrabbedEndPoint = None  #True for start, False for end, None for neither
-ManualMonitorSize = (1680,1050)  #Size of your monitor, so when the window is maximized, the grid will scale.
+ManualMonitorSize = (1600,1200)  #Size of your monitor, so when the window is maximized, the grid will scale.
 #Set to None if you want it to just use the default window size
+#1600x1200 is a high enough resolution that the grid fills a 17" diagonal laptop monitor
 
 
 def findSquare(pos, allowRepeats):  #Finds the Square at the given coords
@@ -43,7 +47,7 @@ def findSquare(pos, allowRepeats):  #Finds the Square at the given coords
             return i
 
 
-def getSquareCoords(pos):
+def getSquareCoords(pos):    #finds x, y of a square's center position
     return pos[0] - pos[0] % (MarginSize + SquareSize), pos[1] - pos[1] % (MarginSize + SquareSize)
 
 
@@ -141,18 +145,69 @@ def drawGrid(self, width, height):
                     #Draw the actual rectangle
 
 
-"""
-Builder.load_string('''  
-<test>: 
-    Label: 
-        text: "Hi!"
-''')         #used for accessing .kv file for manual editing of various class attributes          
-"""
+class AStar:            #this class will generate the optimal path between two points using heuristics
+    def distBetween(self,current,neighbor):     #helps to choose neighboring square that is closest to goal
+        return sqrt((current.x - neighbor.x)**2 + (current.y - neighbor.y)**2)
+
+    def heuristicEstimate(self,start,goal):     #euclidean heuristic; focuses on shorter path but runs longer
+        dx = abs(start.x - goal.x)
+        dy = abs(start.y - goal.y)
+        return (dx + dy) + (sqrt(2) - 2) * min(dx, dy)
+
+    def neighborNodes(self,current):   #pass must be replaced with code
+        pass
+    
+    def constructPath(self,cameFrom,goal):    #generates path from most recent neighbor
+        path = deque()  #double-ended queue; can pop values on either end
+        node = goal
+        path.appendleft(node)
+        while node in cameFrom:     #keep track of nodes already reached
+            node = cameFrom[node]
+            path.appendleft(node)
+        return path
+    
+    def getLowest(self,openSet,fScore):     #compares distances and selects shortest path
+        lowest = float("inf")
+        lowestNode = None
+        for node in openSet:
+            if fScore[node] < lowest:
+                lowest = fScore[node]
+                lowestNode = node
+        return lowestNode
+
+    def aStar(self,start,goal):     #updates sets and continues to compare paths between neighbors
+        cameFrom = {}
+        openSet = set([start])
+        closedSet = set()
+        gScore = {} #distance of square from start node
+        fScore = {} #distance of square from end node
+        gScore[start] = 0
+        #heuristic estimates the straight line distance between start and goal
+        fScore[start] = gScore[start] + self.heuristicEstimate(start,goal)
+        while len(openSet) != 0:
+            current = self.getLowest(openSet,fScore)
+            if current == goal:
+                return self.constructPath(cameFrom,goal)
+            openSet.remove(current)     #when node is reached, added to closedSet
+            closedSet.add(current)      #and removed from openSet
+            #compares gScore, fScore to select nodes closest to goal
+            for neighbor in self.neighborNodes(current):
+                tentative_gScore = gScore[current] + self.distBetween(current,neighbor)
+                if neighbor in closedSet and tentative_gScore >= gScore[neighbor]:
+                    continue
+                if neighbor not in closedSet or tentative_gScore < gScore[neighbor]:
+                    cameFrom[neighbor] = current
+                    gScore[neighbor] = tentative_gScore
+                    fScore[neighbor] = gScore[neighbor] + self.heuristicEstimate(neighbor,goal)
+                    if neighbor not in openSet:
+                        openSet.add(neighbor)
+        return 0
 
 
 class GridWidget(Widget):
     def __init__(self, **kwargs):
         super(GridWidget, self).__init__(**kwargs)  #Don't ask why you need this line. You just do.
+        
         global StartSquarePos, EndSquarePos
         rawStartCoord = Window.width / 3  #Put it 1/3 the way in visual space horizontally
         rawEndCoord = Window.width * 2 / 3  #Same as above, but 2/3 horizontally
@@ -164,6 +219,7 @@ class GridWidget(Widget):
         else:
             drawGrid(self, *ManualMonitorSize)  #Otherwise, use the window size given.
         drawStartAndEnd(self)
+        
 
     def on_touch_down(self, touch):
         global lastColor, GrabbedEndPoint
@@ -189,34 +245,25 @@ class GridWidget(Widget):
         drawStartAndEnd(self)
 
     def on_touch_up(self, touch):
-        global GrabbedEndPoint  #Reset this var so it doesn't assume the start/end point is grabbed.
+        global GrabbedEndPoint  #Resets var so the program doesn't assume the start/end point is grabbed.
         GrabbedEndPoint = None
-
-
-#This will eventually be used for the buttons to switch the algorithm or start pathfinding using RelativeLayout
-
-'''
-class myLayout(BoxLayout):     #Lays out two buttons horizontally, takes up entire window
-    def __init__(self, **kwargs): 
-        super(myLayout, self).__init__(**kwargs)   #Still don't know why you need this, but you do.
-        
-        btn1 = Button(text = "Place Start Point",       #Button 1 for start point
-                       background_color = (0, 2, 0, 1))
-        btn2 = Button(text = "Place End Point",         #Button 2 for end point
-                       background_color = (1, 0, 2, 1))
-        btn1.bind(on_press = self.clk)   #Runs clk on mouse down
-        btn2.bind(on_press = self.clk)
-        self.add_widget(btn1)
-        self.add_widget(btn2)
-       
-    def clk(self, obj):     #clk should allow a special point to appear that can be dragged
-        print("Hello!")
-'''
 
 
 class Grid(App):
     def build(self):
-        return GridWidget()
+        #The following segment of code was supposed to overlay buttons on top as child widgets, but
+        #this did not work because of the way GridWidget was written; we will discuss this later.
+            '''GridWidget.add_widget(GridWidget(), Button(size = (100,75), 
+                         pos = (50, 50),                #the GridWidget is the parent widget and the Buttons
+                         text = "A* Search",            #exist as its children and should spawn only when
+                         color = (0, 1, 0, 1),          #GridWidget is built
+                         font_size = 45), index = 0, canvas = 'after')
+            GridWidget.add_widget(GridWidget(), Button(size = (100,75),
+                         pos = (50, 40),
+                         text = "Best-First Search",
+                         color = (1, 1, 0, 1),
+                         font_size = 45), index = 1, canvas = 'after')'''
+            return GridWidget()
 
 
 if __name__ == "__main__":
