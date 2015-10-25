@@ -7,6 +7,7 @@ from kivy.graphics.vertex_instructions import Rectangle
 from kivy.uix.label import Label
 
 topBarSize = 75
+#The size of the top bar
 
 
 class CalendarGrid(GridLayout):
