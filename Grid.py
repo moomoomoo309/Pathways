@@ -128,7 +128,7 @@ def updateStartAndEnd(self, touch):
 
 def drawGrid(self, width, height):
     global SquareList
-    for x in range(0, int(width / SquareSize) ):
+    for x in range(0, int(width / SquareSize)):
         for y in range(0, int(height / SquareSize)):
             with self.canvas:
                 testSquare = findSquare((x * SquareSize * 3 / 2, y * SquareSize * 3 / 2),
