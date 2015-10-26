@@ -6,11 +6,24 @@ from kivy.uix.widget import Widget
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.uix.label import Label
 from kivy.uix.image import AsyncImage,Image
+from random import randint
+from os.path import isfile
 
 topBarSize = 75
 #The size of the top bar
 CalWidget = None
 CurrentMonth = "October"
+Images=["//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/38e.png",
+        "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
+        "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg",
+        "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png"]
+
+def getImageSource():
+    img=""
+    for i in range(0,2*Images.__len__()):
+        img=Images[randint(0,Images.__len__()-1)]
+        if isfile(img) or (img[0,3]=="http" and requests.head(img).status_code==200):
+            return img
 
 
 class CalendarGrid(GridLayout):
@@ -33,7 +46,7 @@ class CalendarGrid(GridLayout):
         self.spacing = 1
         #Center it a little nicer than kivy does by default.
         for i in range(0, MonthStart):
-            self.add_widget(AsyncImage(source="https://33.media.tumblr.com/avatar_6cfd9990241f_128.png"))  #If the month doesn't start on a Monday, you need an empty day.
+            self.add_widget(AsyncImage(source=getImageSource()))  #If the month doesn't start on a Monday, you need an empty day.
         for i in range(0, MonthLength):
             self.add_widget(ToggleButton(texture=None, background_normal="CalendarInactive.png",
                                          background_down="CalendarActive.png", group="CalendarGrid_Days",
@@ -41,6 +54,8 @@ class CalendarGrid(GridLayout):
                                          pos=(0, Window.height - topBarSize), markup=True, halign="right",
                                          valign="top", text_size=(Window.width / 7, (Window.height - topBarSize) / 6)))
             #The group means they act as radio buttons, so only one is toggleable at a time.
+        for i in range(0,self.rows*self.cols-MonthLength-1):
+            self.add_widget(AsyncImage(source=getImageSource()))
 
 
 def redraw(Window, width, height):
