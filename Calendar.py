@@ -5,12 +5,12 @@ from kivy.core.window import Window
 from kivy.uix.widget import Widget
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.uix.label import Label
-from kivy.properties import BoundedNumericProperty, StringProperty
+from kivy.uix.image import AsyncImage,Image
 
 topBarSize = 75
 #The size of the top bar
 CalWidget = None
-CurrentMonth = "September"
+CurrentMonth = "October"
 
 
 class CalendarGrid(GridLayout):
@@ -33,7 +33,7 @@ class CalendarGrid(GridLayout):
         self.spacing = 1
         #Center it a little nicer than kivy does by default.
         for i in range(0, MonthStart):
-            self.add_widget(Widget())  #If the month doesn't start on a Monday, you need an empty day.
+            self.add_widget(AsyncImage(source="https://33.media.tumblr.com/avatar_6cfd9990241f_128.png"))  #If the month doesn't start on a Monday, you need an empty day.
         for i in range(0, MonthLength):
             self.add_widget(ToggleButton(texture=None, background_normal="CalendarInactive.png",
                                          background_down="CalendarActive.png", group="CalendarGrid_Days",
@@ -51,12 +51,10 @@ def redraw(Window, width, height):
 
 
 class CalendarWidget(Widget):
-    Month = StringProperty("Month Name")
-
     def __init__(self, **kwargs):
         super(CalendarWidget, self).__init__()  #Still need this, apparently.
         with self.canvas:
-            Rectangle(pos=(0, Window.height - topBarSize), size=(Window.width, topBarSize))  #Draw the top bar
+            Rectangle(source="CalendarInactive.png",pos=(0, Window.height - topBarSize), size=(Window.width, topBarSize))  #Draw the top bar
 
         self.add_widget(Label(text_size=(Window.width, topBarSize), size=(Window.width, topBarSize),
                               text="[color=000000][size=36]" + kwargs["Month"] + "[/color][/size]",
