@@ -10,10 +10,21 @@ from random import randint
 from datetime import date
 
 from kivy.graphics.vertex_instructions import Rectangle
+from kivy.graphics import Color,ClearColor
 from os.path import isfile
 
 topBarSize = 75
 # The size of the top bar
+tabSize = 50
+# The size of the tabs vertically.
+tabMargin = 2
+# The space between the top bar and the tab bar.
+numTabs = 4
+# The number of tabs displayed at once
+bottomTabBarRatio=float(1)/16
+# How much of the tab bar should be taken up by the slider
+currentTab = 3
+# The tab currently selected
 CalWidget = None
 # The calendar widget object, so it can be referenced on resize.
 randomImages = True
@@ -24,8 +35,7 @@ Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/
               "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
               "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
-              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg",
-              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/38e.png"]}  # Replace these with pictures of your choice
+              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]}  # Replace these with pictures of your choice
 
 if not online:
     for i in Images:
@@ -50,7 +60,7 @@ def getImageSource(blockedImage):
             while img==blockedImage:
                 img = Images[CurrentMonth][randint(0, Images[CurrentMonth].__len__() - 1)]
         elif Images[CurrentMonth].__len__() <= 1:
-            return "CalendarInactive.png"
+            return img
 
         if isfile(img) or img[0:4] == "http" or img[0:3] == "ftp":
             return img
@@ -65,6 +75,7 @@ class CalendarGrid(GridLayout):
         super(CalendarGrid, self).__init__()  # I need this line for reasons.
         MonthLength = kwargs["MonthLength"]
         MonthStart = kwargs["MonthStart"]
+        self.pos=kwargs["pos"]
         self.cols = 7
         self.rows = 6
         if MonthLength + MonthStart < 36:
@@ -72,10 +83,8 @@ class CalendarGrid(GridLayout):
         # The grid is 7x6 because 7x5 isn't enough for months which start on Saturday
         self.spacing = 0
         # No spacing between each grid element is necessary.
-        self.size = (Window.width, Window.height - topBarSize)
+        self.size = kwargs["size"]
         # Keep it within its bounds.
-        self.pos[1] -= 3
-        self.pos[0] += 1
         self.spacing = 1
         # Center it a little nicer than kivy does by default.
         gridSize = (Window.width / 7, (Window.height - topBarSize) / 6)
@@ -107,14 +116,32 @@ class CalendarWidget(Widget):
         with self.canvas:
             Rectangle(source="CalendarInactive.png", pos=(0, Window.height - topBarSize),
                       size=(Window.width, topBarSize))  # Draw the top bar
+            Color(1,1,1)
+            Rectangle(pos=(0, Window.height - tabMargin), size=(Window.width, tabMargin))
+            Color(1,0,0)
+            Rectangle(pos=(0, Window.height - topBarSize - tabSize - tabMargin),
+                      size=(Window.width, tabSize)) # Draw the tabs bar
+        text=["1 Day","3 Day","Week","Month"]
+
+        for i in range(0,4):
+            self.add_widget(Label(text_size=(Window.width, topBarSize), size=(Window.width/numTabs, tabSize),
+                            text="[size=24]" + text[i] + "[/size]",
+                            pos=(i*Window.width/numTabs, Window.height - topBarSize - tabMargin - tabSize*(1-bottomTabBarRatio)), markup=True, halign="center", valign="middle"))
+
+        with self.canvas:
+            Color(1,1,1)
+            Rectangle(pos=(currentTab*(Window.width/numTabs),Window.height - topBarSize - tabMargin - tabSize),
+                      size=(Window.width/numTabs,tabSize*bottomTabBarRatio))
 
         self.add_widget(Label(text_size=(Window.width, topBarSize), size=(Window.width, topBarSize),
                               text="[color=000000][size=36]" + kwargs["Month"] + "[/color][/size]",
-                              pos=(0, Window.height - topBarSize), markup=True, halign="center", valign="middle"))
+                              pos=(-1, Window.height - topBarSize), markup=True, halign="center", valign="middle"))
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
         self.add_widget(
-            CalendarGrid(MonthLength=Months[kwargs["Month"]], MonthStart=date.today().replace(day=1).weekday()))
+            CalendarGrid(MonthLength=Months[kwargs["Month"]], MonthStart=date.today().replace(day=1).weekday(),
+                         size=(Window.width + 4, Window.height - topBarSize - tabSize - tabMargin + 1),
+                         pos=(-4,-2)))
         # And this adds the grid.
 
 
