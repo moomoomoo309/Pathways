@@ -1,5 +1,6 @@
 from kivy.app import App
 from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.button import ButtonBehavior
 from kivy.uix.gridlayout import GridLayout
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
@@ -22,7 +23,9 @@ Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/
               "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
               "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
               "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
-              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png"]}  # Replace these with pictures of your choice
+              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
+              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg",
+              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/38e.png"]}  # Replace these with pictures of your choice
 
 if not online:
     for i in Images:
@@ -40,13 +43,22 @@ MonthNames = ["January", "February", "March", "April", "May", "June", "July", "A
               "November", "December"]
 
 
-def getImageSource():
+def getImageSource(blockedImage):
     if randomImages and Images[CurrentMonth] is not None and Images[CurrentMonth].__len__() > 0:
         img = Images[CurrentMonth][randint(0, Images[CurrentMonth].__len__() - 1)]
+        if Images[CurrentMonth].__len__() > 1 and blockedImage is not None:
+            while img==blockedImage:
+                img = Images[CurrentMonth][randint(0, Images[CurrentMonth].__len__() - 1)]
+        elif Images[CurrentMonth].__len__() <= 1:
+            return "CalendarInactive.png"
+
         if isfile(img) or img[0:4] == "http" or img[0:3] == "ftp":
             return img
     return "CalendarInactive.png"
 
+class AsyncImageButton(ButtonBehavior, AsyncImage):
+    def on_press(self):
+        self.source=getImageSource(self.source)
 
 class CalendarGrid(GridLayout):
     def __init__(self, **kwargs):
@@ -69,7 +81,7 @@ class CalendarGrid(GridLayout):
         gridSize = (Window.width / 7, (Window.height - topBarSize) / 6)
         # The size of each box in the grid
         for i in range(0, MonthStart):
-            self.add_widget(AsyncImage(source=getImageSource(), allow_stretch=True, keep_ratio=False,
+            self.add_widget(AsyncImageButton(source=getImageSource(None), allow_stretch=True, keep_ratio=False,
                                        size=gridSize))  # If the month doesn't start on a Monday, you need an empty day.
         for i in range(0, MonthLength):
             self.add_widget(ToggleButton(texture=None, background_normal="CalendarInactive.png",
@@ -79,7 +91,7 @@ class CalendarGrid(GridLayout):
                                          valign="top", text_size=gridSize))
             # The group means they act as radio buttons, so only one is toggleable at a time.
         for i in range(0, self.rows * self.cols - MonthLength - MonthStart):
-            self.add_widget(AsyncImage(source=getImageSource(), allow_stretch=True, keep_ratio=False, size=gridSize))
+            self.add_widget(AsyncImageButton(source=getImageSource(None), allow_stretch=True, keep_ratio=False, size=gridSize))
 
 
 def redraw(*args):
