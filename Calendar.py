@@ -1,6 +1,6 @@
 from kivy.app import App
 from kivy.uix.togglebutton import ToggleButton
-from kivy.uix.button import Button,ButtonBehavior
+from kivy.uix.button import Button, ButtonBehavior
 from kivy.uix.gridlayout import GridLayout
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
@@ -8,10 +8,10 @@ from kivy.uix.label import Label
 from kivy.uix.image import AsyncImage
 from random import randint
 from datetime import date
-from kivy.uix.screenmanager import ScreenManager,Screen
+from kivy.uix.screenmanager import ScreenManager, Screen
 
 from kivy.graphics.vertex_instructions import Rectangle
-from kivy.graphics import Color,ClearColor
+from kivy.graphics import Color, ClearColor
 from os.path import isfile
 
 topBarSize = 75
@@ -22,11 +22,11 @@ tabMargin = 2
 # The space between the top bar and the tab bar.
 numTabs = 4
 # The number of tabs displayed at once
-bottomTabBarRatio=float(1)/16
+bottomTabBarRatio = float(1) / 16
 # How much of the tab bar should be taken up by the slider
-tabBarColor = (1,0,0)
+tabBarColor = (1, 0, 0)
 # Color of the tab bar
-tabBarFloatColor = (.75,0,0)
+tabBarFloatColor = (.75, 0, 0)
 # Color of the thin bar below the tabs on the tab bar
 currentTab = 3
 # The tab currently selected
@@ -35,7 +35,7 @@ CalWidget = None
 randomImages = True
 online = False
 screenManager = ScreenManager()
-screens = ["1 Day","3 Day","Week","Month"]
+screens = ["1 Day", "3 Day", "Week", "Month"]
 screenList = []
 CurrentMonth = date.today().month - 1  # It's table indices (0-11), not month count (1-12)
 Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
@@ -65,7 +65,7 @@ def getImageSource(blockedImage):
     if randomImages and Images[CurrentMonth] is not None and Images[CurrentMonth].__len__() > 0:
         img = Images[CurrentMonth][randint(0, Images[CurrentMonth].__len__() - 1)]
         if Images[CurrentMonth].__len__() > 1 and blockedImage is not None:
-            while img==blockedImage:
+            while img == blockedImage:
                 img = Images[CurrentMonth][randint(0, Images[CurrentMonth].__len__() - 1)]
         elif Images[CurrentMonth].__len__() <= 1:
             return img
@@ -74,16 +74,18 @@ def getImageSource(blockedImage):
             return img
     return "CalendarInactive.png"
 
+
 class AsyncImageButton(ButtonBehavior, AsyncImage):
     def on_press(self):
-        self.source=getImageSource(self.source)
+        self.source = getImageSource(self.source)
+
 
 class CalendarGrid(GridLayout):
     def __init__(self, **kwargs):
         super(CalendarGrid, self).__init__()  # I need this line for reasons.
         MonthLength = kwargs["MonthLength"]
         MonthStart = kwargs["MonthStart"]
-        self.pos=kwargs["pos"]
+        self.pos = kwargs["pos"]
         self.cols = 7
         self.rows = 6
         if MonthLength + MonthStart < 36:
@@ -99,7 +101,7 @@ class CalendarGrid(GridLayout):
         # The size of each box in the grid
         for i in range(0, MonthStart):
             self.add_widget(AsyncImageButton(source=getImageSource(None), allow_stretch=True, keep_ratio=False,
-                                       size=gridSize))  # If the month doesn't start on a Monday, you need an empty day.
+                                             size=gridSize))  # If the month doesn't start on a Monday, you need an empty day.
         for i in range(0, MonthLength):
             self.add_widget(ToggleButton(texture=None, background_normal="CalendarInactive.png",
                                          background_down="CalendarActive.png", group="CalendarGrid_Days",
@@ -108,7 +110,8 @@ class CalendarGrid(GridLayout):
                                          valign="top", text_size=gridSize))
             # The group means they act as radio buttons, so only one is toggleable at a time.
         for i in range(0, self.rows * self.cols - MonthLength - MonthStart):
-            self.add_widget(AsyncImageButton(source=getImageSource(None), allow_stretch=True, keep_ratio=False, size=gridSize))
+            self.add_widget(
+                AsyncImageButton(source=getImageSource(None), allow_stretch=True, keep_ratio=False, size=gridSize))
 
 
 def redraw(*args):
@@ -117,12 +120,14 @@ def redraw(*args):
     CalWidget.__init__(Month=MonthNames[CurrentMonth])
     return CalWidget
 
+
 # Switches the screen to the one pressed by the button without transition
 def switchCalScreen(*args):
     for i in screenList:
         if args[0].text[len("[text=24]"):-len("[/size]")] == i.name and i.name != screenManager.current:
             screenManager.switch_to(i)
-            #When more screens are added, this will actually work. Until then, it does nothing.
+            # When more screens are added, this will actually work. Until then, it does nothing.
+
 
 class MonthWidget(Widget):
     def __init__(self, **kwargs):
@@ -133,19 +138,20 @@ class MonthWidget(Widget):
             Rectangle(pos=(0, Window.height - tabMargin), size=(Window.width, tabMargin))
             Color(*tabBarColor)
             Rectangle(pos=(0, Window.height - topBarSize - tabSize - tabMargin),
-                      size=(Window.width, tabSize)) # Draw the tabs bar
+                      size=(Window.width, tabSize))  # Draw the tabs bar
 
         # Add text for tabs
-        for i in range(0,4):
-            self.add_widget(Button(text_size=(Window.width, topBarSize), size=(Window.width/numTabs, tabSize),
-                            text="[size=24]" + screens[i] + "[/size]", background_color=(1,1,1,0),
-                            pos=(i*Window.width/numTabs, Window.height - topBarSize - tabMargin - tabSize*(1-bottomTabBarRatio)),
-                            markup=True, halign="center", valign="middle", on_press = switchCalScreen))
+        for i in range(0, 4):
+            self.add_widget(Button(text_size=(Window.width, topBarSize), size=(Window.width / numTabs, tabSize),
+                                   text="[size=24]" + screens[i] + "[/size]", background_color=(1, 1, 1, 0),
+                                   pos=(i * Window.width / numTabs,
+                                        Window.height - topBarSize - tabMargin - tabSize * (1 - bottomTabBarRatio)),
+                                   markup=True, halign="center", valign="middle", on_press=switchCalScreen))
 
         with self.canvas:
             Color(*tabBarFloatColor)
-            Rectangle(pos=(currentTab*(Window.width/numTabs),Window.height - topBarSize - tabMargin - tabSize),
-                      size=(Window.width/numTabs,tabSize*bottomTabBarRatio))
+            Rectangle(pos=(currentTab * (Window.width / numTabs), Window.height - topBarSize - tabMargin - tabSize),
+                      size=(Window.width / numTabs, tabSize * bottomTabBarRatio))
 
         self.add_widget(Label(text_size=(Window.width, topBarSize), size=(Window.width, topBarSize),
                               text="[color=000000][size=36]" + kwargs["Month"] + "[/color][/size]",
@@ -155,7 +161,7 @@ class MonthWidget(Widget):
         self.add_widget(
             CalendarGrid(MonthLength=Months[kwargs["Month"]], MonthStart=date.today().replace(day=1).weekday(),
                          size=(Window.width + 4, Window.height - topBarSize - tabSize - tabMargin + 1),
-                         pos=(-4,-2)))
+                         pos=(-4, -2)))
         # And this adds the grid.
 
 
@@ -164,7 +170,7 @@ class Calendar(App):
         Window.bind(on_resize=redraw)
         global CalWidget
         CalWidget = MonthWidget(Month=MonthNames[CurrentMonth])
-        MonthScreen=Screen(name=screens[3])
+        MonthScreen = Screen(name=screens[3])
         MonthScreen.add_widget(CalWidget)
         screenList.append(MonthScreen)
         screenManager.add_widget(MonthScreen)
