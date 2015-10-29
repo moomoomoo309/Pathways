@@ -1,6 +1,6 @@
 from kivy.app import App
 from kivy.uix.togglebutton import ToggleButton
-from kivy.uix.button import ButtonBehavior
+from kivy.uix.button import Button,ButtonBehavior
 from kivy.uix.gridlayout import GridLayout
 from kivy.core.window import Window
 from kivy.uix.widget import Widget
@@ -8,6 +8,7 @@ from kivy.uix.label import Label
 from kivy.uix.image import AsyncImage
 from random import randint
 from datetime import date
+from kivy.uix.screenmanager import ScreenManager,Screen
 
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.graphics import Color,ClearColor
@@ -23,12 +24,19 @@ numTabs = 4
 # The number of tabs displayed at once
 bottomTabBarRatio=float(1)/16
 # How much of the tab bar should be taken up by the slider
+tabBarColor = (1,0,0)
+# Color of the tab bar
+tabBarFloatColor = (.75,0,0)
+# Color of the thin bar below the tabs on the tab bar
 currentTab = 3
 # The tab currently selected
 CalWidget = None
 # The calendar widget object, so it can be referenced on resize.
 randomImages = True
 online = False
+screenManager = ScreenManager()
+screens = ["1 Day","3 Day","Week","Month"]
+screenList = []
 CurrentMonth = date.today().month - 1  # It's table indices (0-11), not month count (1-12)
 Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
               "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
@@ -109,27 +117,33 @@ def redraw(*args):
     CalWidget.__init__(Month=MonthNames[CurrentMonth])
     return CalWidget
 
+# Switches the screen to the one pressed by the button without transition
+def switchCalScreen(*args):
+    for i in screenList:
+        if args[0].text[len("[text=24]"):-len("[/size]")] == i.name and i.name != screenManager.current:
+            screenManager.switch_to(i)
+            #When more screens are added, this will actually work. Until then, it does nothing.
 
-class CalendarWidget(Widget):
+class MonthWidget(Widget):
     def __init__(self, **kwargs):
-        super(CalendarWidget, self).__init__()  # Still need this, apparently.
+        super(MonthWidget, self).__init__()  # Still need this, apparently.
         with self.canvas:
             Rectangle(source="CalendarInactive.png", pos=(0, Window.height - topBarSize),
                       size=(Window.width, topBarSize))  # Draw the top bar
-            Color(1,1,1)
             Rectangle(pos=(0, Window.height - tabMargin), size=(Window.width, tabMargin))
-            Color(1,0,0)
+            Color(*tabBarColor)
             Rectangle(pos=(0, Window.height - topBarSize - tabSize - tabMargin),
                       size=(Window.width, tabSize)) # Draw the tabs bar
-        text=["1 Day","3 Day","Week","Month"]
 
+        # Add text for tabs
         for i in range(0,4):
-            self.add_widget(Label(text_size=(Window.width, topBarSize), size=(Window.width/numTabs, tabSize),
-                            text="[size=24]" + text[i] + "[/size]",
-                            pos=(i*Window.width/numTabs, Window.height - topBarSize - tabMargin - tabSize*(1-bottomTabBarRatio)), markup=True, halign="center", valign="middle"))
+            self.add_widget(Button(text_size=(Window.width, topBarSize), size=(Window.width/numTabs, tabSize),
+                            text="[size=24]" + screens[i] + "[/size]", background_color=(1,1,1,0),
+                            pos=(i*Window.width/numTabs, Window.height - topBarSize - tabMargin - tabSize*(1-bottomTabBarRatio)),
+                            markup=True, halign="center", valign="middle", on_press = switchCalScreen))
 
         with self.canvas:
-            Color(1,1,1)
+            Color(*tabBarFloatColor)
             Rectangle(pos=(currentTab*(Window.width/numTabs),Window.height - topBarSize - tabMargin - tabSize),
                       size=(Window.width/numTabs,tabSize*bottomTabBarRatio))
 
@@ -149,8 +163,12 @@ class Calendar(App):
     def build(self):
         Window.bind(on_resize=redraw)
         global CalWidget
-        CalWidget = CalendarWidget(Month=MonthNames[CurrentMonth])
-        return CalWidget
+        CalWidget = MonthWidget(Month=MonthNames[CurrentMonth])
+        MonthScreen=Screen(name=screens[3])
+        MonthScreen.add_widget(CalWidget)
+        screenList.append(MonthScreen)
+        screenManager.add_widget(MonthScreen)
+        return screenManager
 
 
 if __name__ == "__main__":
