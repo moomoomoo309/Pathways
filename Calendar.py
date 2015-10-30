@@ -8,7 +8,7 @@ from kivy.uix.label import Label
 from kivy.uix.image import AsyncImage
 from random import randint
 from datetime import date
-from kivy.uix.screenmanager import ScreenManager, Screen
+from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
 
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.graphics import Color, ClearColor
@@ -33,7 +33,7 @@ currentTab = 3
 CalWidget = None
 # The calendar widget object, so it can be referenced on resize.
 randomImages = True
-online = False
+online = True
 screenManager = ScreenManager()
 screens = ["1 Day", "3 Day", "Week", "Month"]
 screenList = []
@@ -45,15 +45,22 @@ Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]}  # Replace these with pictures of your choice
 
-if not online:
-    for i in Images:
-        if isinstance(i, (int, long)):
-            j = 0
-            while j < Images[i].__len__():
-                if Images[i][j][0:4] == "http" or Images[i][j][0:3] == "ftp":
-                    Images[i].remove(Images[i][j])
+for i in Images:
+    if isinstance(i, (int, long)):
+        j = 0
+        while j < Images[i].__len__():
+            if not isfile(Images[i][j]):
+                if not online:
+                    if not isfile(Images[i][j]):
+                        Images[i].remove(Images[i][j])
+                    else:
+                        j += 1
                 else:
-                    j += 1
+                    if not (Images[i][j][0:4] == "http" or Images[i][j][0:3] == "ftp") and not isfile(Images[i][j]):
+                        Images[i].remove(Images[i][j])
+                    else:
+                        j += 1
+
 
 Months = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31,
           "September": 31, "October": 31, "November": 30, "December": 31}
@@ -72,6 +79,7 @@ def getImageSource(blockedImage):
 
         if isfile(img) or img[0:4] == "http" or img[0:3] == "ftp":
             return img
+
     return "CalendarInactive.png"
 
 
@@ -117,47 +125,69 @@ class CalendarGrid(GridLayout):
 def redraw(*args):
     global CalWidget
     CalWidget.canvas.clear()
-    CalWidget.__init__(Month=MonthNames[CurrentMonth])
+    CalWidget.__init__(Month=MonthNames[CurrentMonth],currentTab=None)
     return CalWidget
+
+
+def getScreenIndex(name):
+    for i in range(0,screens.__len__()):
+        if name == screens[i]:
+            return i
 
 
 # Switches the screen to the one pressed by the button without transition
 def switchCalScreen(*args):
+    global currentTab
     for i in screenList:
-        if args[0].text[len("[text=24]"):-len("[/size]")] == i.name and i.name != screenManager.current:
-            screenManager.switch_to(i)
+        if args[0].text[len("[color=ffffff][size=24]"):-len("[/size][/color]")] == i.name and i.name != screenManager.current:
+            if getScreenIndex(i.name) > getScreenIndex(screenManager.current):
+                screenManager.transition = SlideTransition(direction="left")
+            else:
+                screenManager.transition = SlideTransition(direction="right")
+            currentTab = getScreenIndex(i.name)
+            screenManager.current = i.name
             # When more screens are added, this will actually work. Until then, it does nothing.
+
+
+def drawGui(self, **kwargs):
+    if kwargs["currentTab"] is not None:
+        currTab = kwargs["currentTab"]
+    else:
+        currTab = currentTab
+    with self.canvas.before:
+        Rectangle(source="CalendarInactive.png", pos=(0, Window.height - topBarSize),
+                  size=(Window.width, topBarSize))  # Draw the top bar
+        Rectangle(pos=(0, Window.height - tabMargin), size=(Window.width, tabMargin))
+        Color(*tabBarColor)
+        Rectangle(pos=(0, Window.height - topBarSize - tabSize - tabMargin),
+                  size=(Window.width, tabSize))  # Draw the tabs bar
+        Color(1,1,1)
+
+    # Add text for tabs
+    for i in range(0, 4):
+        self.add_widget(Button(text_size=(Window.width / numTabs, tabSize), size=(Window.width / numTabs, tabSize),
+                               text="[color=ffffff][size=24]" + screens[i] + "[/size][/color]", #background_color=(1, 1, 1, 0),
+                               pos=self.to_widget(i * Window.width / numTabs,
+                                    Window.height - topBarSize - tabMargin - tabSize * (1 - bottomTabBarRatio)),
+                               markup=True, halign="center", valign="middle", on_press=switchCalScreen))
+
+    with self.canvas.before:
+        Color(*tabBarFloatColor)
+        Rectangle(pos=(currTab * (Window.width / numTabs), Window.height - topBarSize - tabMargin - tabSize),
+                  size=(Window.width / numTabs, tabSize * bottomTabBarRatio))
+        Color(1, 1, 1)
+
+    self.add_widget(Label(text_size=(Window.width, topBarSize), size=(Window.width, topBarSize),
+                          text="[color=000000][size=36]" + kwargs["Month"] + "[/color][/size]",
+                          pos=(-1, Window.height - topBarSize), markup=True, halign="center", valign="middle"))
+    # It's got markup in it for color and size, and the text is centered vertically and horizontally.
+    # The text is from the keyword argument "Month".
 
 
 class MonthWidget(Widget):
     def __init__(self, **kwargs):
         super(MonthWidget, self).__init__()  # Still need this, apparently.
-        with self.canvas:
-            Rectangle(source="CalendarInactive.png", pos=(0, Window.height - topBarSize),
-                      size=(Window.width, topBarSize))  # Draw the top bar
-            Rectangle(pos=(0, Window.height - tabMargin), size=(Window.width, tabMargin))
-            Color(*tabBarColor)
-            Rectangle(pos=(0, Window.height - topBarSize - tabSize - tabMargin),
-                      size=(Window.width, tabSize))  # Draw the tabs bar
-
-        # Add text for tabs
-        for i in range(0, 4):
-            self.add_widget(Button(text_size=(Window.width, topBarSize), size=(Window.width / numTabs, tabSize),
-                                   text="[size=24]" + screens[i] + "[/size]", background_color=(1, 1, 1, 0),
-                                   pos=(i * Window.width / numTabs,
-                                        Window.height - topBarSize - tabMargin - tabSize * (1 - bottomTabBarRatio)),
-                                   markup=True, halign="center", valign="middle", on_press=switchCalScreen))
-
-        with self.canvas:
-            Color(*tabBarFloatColor)
-            Rectangle(pos=(currentTab * (Window.width / numTabs), Window.height - topBarSize - tabMargin - tabSize),
-                      size=(Window.width / numTabs, tabSize * bottomTabBarRatio))
-
-        self.add_widget(Label(text_size=(Window.width, topBarSize), size=(Window.width, topBarSize),
-                              text="[color=000000][size=36]" + kwargs["Month"] + "[/color][/size]",
-                              pos=(-1, Window.height - topBarSize), markup=True, halign="center", valign="middle"))
-        # It's got markup in it for color and size, and the text is centered vertically and horizontally.
-        # The text is from the keyword argument "Month".
+        drawGui(self, **kwargs)
         self.add_widget(
             CalendarGrid(MonthLength=Months[kwargs["Month"]], MonthStart=date.today().replace(day=1).weekday(),
                          size=(Window.width + 4, Window.height - topBarSize - tabSize - tabMargin + 1),
@@ -169,11 +199,16 @@ class Calendar(App):
     def build(self):
         Window.bind(on_resize=redraw)
         global CalWidget
-        CalWidget = MonthWidget(Month=MonthNames[CurrentMonth])
+        CalWidget = MonthWidget(Month=MonthNames[CurrentMonth], currentTab=3)
         MonthScreen = Screen(name=screens[3])
         MonthScreen.add_widget(CalWidget)
+        testScreen = Screen(name=screens[2])
+        testScreen.add_widget(Label(text="This is a test!"))
+        drawGui(testScreen, Month=MonthNames[CurrentMonth], currentTab=2)
         screenList.append(MonthScreen)
+        screenList.append(testScreen)
         screenManager.add_widget(MonthScreen)
+        screenManager.add_widget(testScreen)
         return screenManager
 
 
