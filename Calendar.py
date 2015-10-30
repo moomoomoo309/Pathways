@@ -9,10 +9,10 @@ from kivy.uix.image import AsyncImage
 from random import randint
 from datetime import date
 from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
+from kivy.graphics import Color
+from os.path import isfile
 
 from kivy.graphics.vertex_instructions import Rectangle
-from kivy.graphics import Color, ClearColor
-from os.path import isfile
 
 topBarSize = 75
 # The size of the top bar
@@ -204,6 +204,7 @@ class Calendar(App):
         MonthScreen.add_widget(CalWidget)
         testScreen = Screen(name=screens[2])
         testScreen.add_widget(Label(text="This is a test!"))
+        #You need a second screen for testing!
         drawGui(testScreen, Month=MonthNames[CurrentMonth], currentTab=2)
         screenList.append(MonthScreen)
         screenList.append(testScreen)
