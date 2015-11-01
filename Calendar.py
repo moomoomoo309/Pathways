@@ -3,16 +3,16 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.button import Button, ButtonBehavior
 from kivy.uix.gridlayout import GridLayout
 from kivy.core.window import Window
-from kivy.uix.widget import Widget
 from kivy.uix.label import Label
-from kivy.uix.image import AsyncImage, Image
+from kivy.uix.image import AsyncImage
 from random import randint
 from datetime import date
-from kivy.uix.screenmanager import ScreenManager, Screen, SlideTransition
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.graphics import Color
 from os.path import isfile
 from kivy.animation import Animation, AnimationTransition
 
+from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
 
 topBarSize = 75
@@ -23,11 +23,11 @@ tabMargin = 2
 # The space between the top bar and the tab bar.
 numTabs = 4
 # The number of tabs displayed at once
-bottomTabBarRatio = float(1) / 16
-# How much of the tab bar should be taken up by the slider
+floatBarRatio = float(1) / 16
+# How much of the tab bar should be taken up by the float bar
 tabBarColor = (1, 0, 0)
 # Color of the tab bar
-FloatBarColor = (.75, 0, 0, 1)
+floatBarColor = (.75, 0, 0, 1)
 # Color of the thin bar below the tabs on the tab bar
 currentTab = 3
 # The tab currently selected
@@ -53,6 +53,8 @@ Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/
               "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]}  # Replace these with pictures of your choice
+
+topBarBackground = InstructionGroup()
 
 # Remove any images which don't exist or are online if online is false
 for i in Images:
@@ -80,7 +82,7 @@ MonthNames = ["January", "February", "March", "April", "May", "June", "July", "A
 
 # Changes the image on the empty days on press
 def getImageSource(blockedImage):
-    if randomImages and Images[CurrentMonth] is not None and Images[CurrentMonth].__len__() > 0:
+    if randomImages and CurrentMonth in Images is not None and Images[CurrentMonth].__len__() > 0:
         img = Images[CurrentMonth][randint(0, Images[CurrentMonth].__len__() - 1)]
         if Images[CurrentMonth].__len__() > 1 and blockedImage is not None:
             while img == blockedImage:
@@ -112,16 +114,13 @@ class CalendarGrid(GridLayout):
         # Get the position of the widget
         self.cols = 7
         self.rows = 6
-        if MonthLength + MonthStart < 36:
+        if int(MonthLength) + int(MonthStart) < 36:
             self.rows = 5
         # The grid is 7x6 because 7x5 isn't enough for months which start on Saturday
-        self.spacing = 0
-        # No spacing between each grid element is necessary.
         self.size = kwargs["size"]
         # Keep it within its bounds.
         self.spacing = 1
-        # Center it a little nicer than kivy does by default.
-        gridSize = (Window.width / 7, (Window.height - topBarSize) / 6)
+        gridSize = (float(Window.width) / 7, float(Window.height - topBarSize) / 6)
         # The size of each box in the grid
         for i in range(0, MonthStart):
             self.add_widget(AsyncImageButton(source=getImageSource(None), allow_stretch=True, keep_ratio=False,
@@ -142,10 +141,28 @@ class CalendarGrid(GridLayout):
 
 # Redraw the whole thing on resize
 def redraw(*args):
+    layout = CalWidget.parent.parent.parent
+    layout.size = (Window.width, Window.height)
+    topBarBackground.clear()
+    drawTopBarBackground()
+    for i in layout.children:  #Reset the size of the all the widgets that make up the top bar
+        if i == FloatBar:
+            i.size = [Window.width / numTabs, tabSize * floatBarRatio]
+            i.pos = [currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin]
+        elif isinstance(i, Button):
+            i.pos = (getTabButtonPos(i.i))
+            i.size = (getTabButtonSize())
+        elif isinstance(i, Label):
+            i.pos = (-1, Window.height - topBarSize)
+            i.size = (Window.width, topBarSize)
+        elif isinstance(i, ScreenManager):
+            i.pos = (0, 0)
+            i.size = (Window.width, Window.height - topBarSize - tabSize - tabMargin)
+    CalParent = CalWidget.parent
+    CalParent.remove_widget(CalWidget)
     global CalWidget
-    CalWidget.canvas.clear()
-    CalWidget.__init__(Month=MonthNames[CurrentMonth], currentTab=None)
-    return CalWidget
+    CalWidget = makeCalWidget()
+    CalParent.add_widget(CalWidget)
 
 
 # Used to figure out whether a tab is to the left or right of the current one.
@@ -179,36 +196,47 @@ def animateFloatBar(tab):
     # out_sine looks pretty good, I think.
 
 
-# Draw the top bar
-def drawGui(self, **kwargs):
-    with self.canvas.before:
-        Rectangle(source="CalendarInactive.png", pos=(0, Window.height - topBarSize),
-                  size=(Window.width, topBarSize))  # Draw the top bar
-        Rectangle(pos=(0, Window.height - tabMargin), size=(Window.width, tabMargin))
-        Color(*tabBarColor)
-        Rectangle(pos=(0, Window.height - topBarSize - tabSize - tabMargin),
-                  size=(Window.width, tabSize))  # Draw the tabs bar
-        Color(1, 1, 1)
+def getTabButtonPos(i):
+    return i * Window.width / numTabs, Window.height - topBarSize - tabMargin - tabSize * (1 - floatBarRatio)
 
+
+def getTabButtonSize():
+    return Window.width / numTabs, tabSize
+
+
+def drawTopBarBackground():
+    topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, Window.height - topBarSize),
+                                   size=(Window.width, topBarSize)))  # Draw the top bar
+    topBarBackground.add(Rectangle(pos=(0, Window.height - tabMargin), size=(Window.width, tabMargin)))
+    topBarBackground.add(Color(*tabBarColor))
+    topBarBackground.add(Rectangle(pos=(0, Window.height - topBarSize - tabSize - tabMargin),
+                                   size=(Window.width, tabSize)))  # Draw the tabs bar
+    topBarBackground.add(Color(1, 1, 1))
+
+    # Draw the top bar
+
+
+def drawGui(self, **kwargs):
+    drawTopBarBackground()
+    self.canvas.before.add(topBarBackground)
     # Add text for tabs
     for i in range(0, 4):
-        self.add_widget(Button(text_size=(Window.width / numTabs, tabSize), size=(Window.width / numTabs, tabSize),
-                               text="[color=ffffff][size=24]" + screens[i] + "[/size][/color]",
-                               background_color=(1, 1, 1, 0),
-                               pos=(i * Window.width / numTabs,
-                                    Window.height - topBarSize - tabMargin - tabSize * (
-                                        1 - bottomTabBarRatio)),
-                               markup=True, halign="center", valign="middle", on_press=switchCalScreen))
+        btn = Button(text_size=getTabButtonSize(), size=getTabButtonSize(),
+                     text="[color=ffffff][size=24]" + screens[i] + "[/size][/color]",
+                     background_color=(1, 1, 1, 0), pos=getTabButtonPos(i),
+                     markup=True, halign="center", valign="middle", on_press=switchCalScreen)
+        btn.i = i
+        self.add_widget(btn)
 
     self.add_widget(Label(text_size=(Window.width, topBarSize), size=(Window.width, topBarSize),
                           text="[color=000000][size=36]" + kwargs["Month"] + "[/color][/size]",
-                          pos=self.to_local(-1, Window.height - topBarSize), markup=True, halign="center",
+                          pos=(-1, Window.height - topBarSize), markup=True, halign="center",
                           valign="middle"))
     # It's got markup in it for color and size, and the text is centered vertically and horizontally.
     # The text is from the keyword argument "Month".
     global FloatBar
-    FloatBar = Button(background_color=tabBarFloatColor, background_normal="", background_down="",
-                      size=(Window.width / numTabs, tabSize * bottomTabBarRatio),
+    FloatBar = Button(background_color=floatBarColor, background_normal="", background_down="",
+                      size=(Window.width / numTabs, tabSize * floatBarRatio),
                       pos=(currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin))
 
     print(FloatBar.size[1])
@@ -216,26 +244,22 @@ def drawGui(self, **kwargs):
     # Add the float bar
 
 
-class MonthWidget(Widget):
-    def __init__(self, **kwargs):
-        super(MonthWidget, self).__init__()  # Still need this, apparently.
-        self.add_widget(
-            CalendarGrid(MonthLength=Months[kwargs["Month"]], MonthStart=date.today().replace(day=1).weekday(),
-                         size=(Window.width + 4, Window.height - topBarSize - tabSize - tabMargin + 1),
-                         pos=(-4, -2)))
-        # And this adds the grid.
+def makeCalWidget():
+    return CalendarGrid(MonthLength=Months[MonthNames[CurrentMonth]], pos=(0, -tabMargin),
+                        MonthStart=date.today().replace(day=1).weekday(),
+                        size=(Window.width, Window.height - topBarSize - tabSize - tabMargin + 1))
 
 
 class Calendar(App):
     def build(self):
-        layout = GridLayout(spacing=0)
+        layout = GridLayout()
         # Put everything in a GridLayout
         drawGui(layout, Month=MonthNames[CurrentMonth])
         # Draw the top bar
         Window.bind(on_resize=redraw)
         # Redraw the whole thing on resize
         global CalWidget
-        CalWidget = MonthWidget(Month=MonthNames[CurrentMonth])
+        CalWidget = makeCalWidget()
         # Use this for resizing
         MonthScreen = Screen(name=screens[3])
         MonthScreen.add_widget(CalWidget)
