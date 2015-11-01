@@ -248,6 +248,7 @@ def makeCalWidget():
     return CalendarGrid(MonthLength=Months[MonthNames[CurrentMonth]], pos=(0, -tabMargin),
                         MonthStart=date.today().replace(day=1).weekday(),
                         size=(Window.width, Window.height - topBarSize - tabSize - tabMargin + 1))
+    # The monthwidget did nothing, so it's gone!
 
 
 class Calendar(App):
