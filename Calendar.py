@@ -23,7 +23,7 @@ tabMargin = 2
 # The space between the top bar and the tab bar.
 numTabs = 4
 # The number of tabs displayed at once
-floatBarRatio = float(1) / 16
+floatBarRatio = float(1) / 8
 # How much of the tab bar should be taken up by the float bar
 tabBarColor = (1, 0, 0)
 # Color of the tab bar
@@ -114,7 +114,7 @@ class CalendarGrid(GridLayout):
         # Get the position of the widget
         self.cols = 7
         self.rows = 6
-        if int(MonthLength) + int(MonthStart) < 36:
+        if MonthLength + MonthStart < 36:
             self.rows = 5
         # The grid is 7x6 because 7x5 isn't enough for months which start on Saturday
         self.size = kwargs["size"]
@@ -235,18 +235,17 @@ def drawGui(self, **kwargs):
     # It's got markup in it for color and size, and the text is centered vertically and horizontally.
     # The text is from the keyword argument "Month".
     global FloatBar
-    FloatBar = Button(background_color=floatBarColor, background_normal="", background_down="",
-                      size=(Window.width / numTabs, tabSize * floatBarRatio),
-                      pos=(currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin))
+    FloatBar = AsyncImage(source="FloatBar.png", size=(Window.width / numTabs, tabSize * floatBarRatio),
+                          pos=(currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin),
+                          allow_stretch=True, keep_ratio=False)
 
-    print(FloatBar.size[1])
     self.add_widget(FloatBar)
     # Add the float bar
 
 
 def makeCalWidget():
     return CalendarGrid(MonthLength=Months[MonthNames[CurrentMonth]], pos=(0, -tabMargin),
-                        MonthStart=date.today().replace(day=1).weekday(),
+                        MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
                         size=(Window.width, Window.height - topBarSize - tabSize - tabMargin + 1))
     # The monthwidget did nothing, so it's gone!
 
