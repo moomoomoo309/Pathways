@@ -1,4 +1,5 @@
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.button import Button, ButtonBehavior
 from kivy.uix.gridlayout import GridLayout
@@ -42,7 +43,7 @@ online = False
 # Get images from the internet
 screenManager = ScreenManager()
 # The screen manager object
-carousel = Carousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize))
+carousel = Carousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize), direction="left")
 # The carousel object
 screens = ["1 Day", "3 Day", "Week", "Month"]
 # The name of all of the screens
@@ -254,8 +255,8 @@ def makeCalWidget():
 
 class Calendar(App):
     def build(self):
-        layout = GridLayout()
         carousel.bind(current_slide=animateFloatBar)
+        layout = GridLayout()
         # Put everything in a GridLayout
         drawGui(layout, Month=MonthNames[CurrentMonth])
         # Draw the top bar
