@@ -11,6 +11,7 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.graphics import Color
 from os.path import isfile
 from kivy.animation import Animation, AnimationTransition
+from kivy.uix.carousel import Carousel
 
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
@@ -23,7 +24,7 @@ tabMargin = 2
 # The space between the top bar and the tab bar.
 numTabs = 4
 # The number of tabs displayed at once
-floatBarRatio = float(1) / 16
+floatBarRatio = float(1) / 8
 # How much of the tab bar should be taken up by the float bar
 tabBarColor = (1, 0, 0)
 # Color of the tab bar
@@ -39,8 +40,10 @@ randomImages = True
 # Use random images to fill the empty days of the calendar
 online = False
 # Get images from the internet
-screenManager = ScreenManager(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize))
+screenManager = ScreenManager()
 # The screen manager object
+carousel = Carousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize))
+# The carousel object
 screens = ["1 Day", "3 Day", "Week", "Month"]
 # The name of all of the screens
 screenList = []
@@ -114,7 +117,7 @@ class CalendarGrid(GridLayout):
         # Get the position of the widget
         self.cols = 7
         self.rows = 6
-        if int(MonthLength) + int(MonthStart) < 36:
+        if MonthLength + MonthStart < 36:
             self.rows = 5
         # The grid is 7x6 because 7x5 isn't enough for months which start on Saturday
         self.size = kwargs["size"]
@@ -165,32 +168,31 @@ def redraw(*args):
     CalParent.add_widget(CalWidget)
 
 
-# Used to figure out whether a tab is to the left or right of the current one.
-def getScreenIndex(name):
-    for i in range(0, screens.__len__()):
-        if name == screens[i]:
-            return i
-
-
 # Switches the screen to the one pressed by the button without transition
 def switchCalScreen(*args):
     global currentTab
+    print(args)
     for i in screenList:
         if args[0].text[
-           len("[color=ffffff][size=24]"):-len("[/size][/color]")] == i.name and i.name != screenManager.current:
-            if getScreenIndex(i.name) > getScreenIndex(screenManager.current):
-                screenManager.transition.direction = "left"
+           len("[color=ffffff][size=24]"):-len("[/size][/color]")] == i.name and i.name != carousel.current_slide.name:
+            print("{} > {}".format(screens.index(i.name), screens.index(carousel.current_slide.name)))
+            print(screens.index(i.name) > screens.index(carousel.current_slide.name))
+            if screens.index(i.name) > screens.index(carousel.current_slide.name):
+                carousel.direction = "left"
             else:
-                screenManager.transition.direction = "right"
-            animateFloatBar(getScreenIndex(i.name))
+                carousel.direction = "right"
+            animateFloatBar(screens.index(i.name))
             # Animate the floatbar
-            screenManager.current = i.name
+            carousel.load_slide(i)
             # Animates the whole screen except the bar on top
 
 
-def animateFloatBar(tab):
+def animateFloatBar(tab, *args):
     global currentTab
-    currentTab = tab
+    if len(args) > 0:
+        currentTab = screens.index(args[0].name)
+    else:
+        currentTab = tab
     Animation(x=Window.width / numTabs * currentTab, y=FloatBar.pos[1], duration=.25,
               transition=AnimationTransition.out_sine).start(FloatBar)
     # out_sine looks pretty good, I think.
@@ -235,18 +237,17 @@ def drawGui(self, **kwargs):
     # It's got markup in it for color and size, and the text is centered vertically and horizontally.
     # The text is from the keyword argument "Month".
     global FloatBar
-    FloatBar = Button(background_color=floatBarColor, background_normal="", background_down="",
-                      size=(Window.width / numTabs, tabSize * floatBarRatio),
-                      pos=(currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin))
+    FloatBar = AsyncImage(source="FloatBar.png", size=(Window.width / numTabs, tabSize * floatBarRatio),
+                          pos=(currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin),
+                          allow_stretch=True, keep_ratio=False)
 
-    print(FloatBar.size[1])
     self.add_widget(FloatBar)
     # Add the float bar
 
 
 def makeCalWidget():
     return CalendarGrid(MonthLength=Months[MonthNames[CurrentMonth]], pos=(0, -tabMargin),
-                        MonthStart=date.today().replace(day=1).weekday(),
+                        MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
                         size=(Window.width, Window.height - topBarSize - tabSize - tabMargin + 1))
     # The monthwidget did nothing, so it's gone!
 
@@ -254,6 +255,7 @@ def makeCalWidget():
 class Calendar(App):
     def build(self):
         layout = GridLayout()
+        carousel.bind(current_slide=animateFloatBar)
         # Put everything in a GridLayout
         drawGui(layout, Month=MonthNames[CurrentMonth])
         # Draw the top bar
@@ -264,15 +266,16 @@ class Calendar(App):
         # Use this for resizing
         MonthScreen = Screen(name=screens[3])
         MonthScreen.add_widget(CalWidget)
-        screenManager.add_widget(MonthScreen)
+        carousel.add_widget(MonthScreen)
         screenList.append(MonthScreen)
         for i in range(2, -1, -1):
             testScreen = Screen(name=screens[i])
             testScreen.add_widget(Label(text="This is a test!"))
             # You need a second screen for testing!
             screenList.append(testScreen)
-            screenManager.add_widget(testScreen)
+            carousel.add_widget(testScreen)
         layout.add_widget(screenManager)
+        layout.add_widget(carousel)
         return layout
 
 
