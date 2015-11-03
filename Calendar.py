@@ -1,4 +1,6 @@
 from kivy.app import App
+from kivy.clock import Clock
+from kivy.properties import AliasProperty
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.button import Button, ButtonBehavior
 from kivy.uix.gridlayout import GridLayout
@@ -11,6 +13,8 @@ from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.graphics import Color
 from os.path import isfile
 from kivy.animation import Animation, AnimationTransition
+from kivy.uix.carousel import Carousel
+from functools import partial
 
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
@@ -39,14 +43,18 @@ randomImages = True
 # Use random images to fill the empty days of the calendar
 online = False
 # Get images from the internet
-screenManager = ScreenManager(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize))
+screenManager = ScreenManager()
 # The screen manager object
+carousel = None
+# The carousel object
 screens = ["1 Day", "3 Day", "Week", "Month"]
 # The name of all of the screens
 screenList = []
 # A list containing all of the screens
 CurrentMonth = date.today().month - 1  # It's table indices (0-11), not month count (1-12)
 # The current month
+overrideTab = None
+# Forces the tab to be used to be this one.
 Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
               "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
               "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
@@ -145,7 +153,7 @@ def redraw(*args):
     layout.size = (Window.width, Window.height)
     topBarBackground.clear()
     drawTopBarBackground()
-    for i in layout.children:  #Reset the size of the all the widgets that make up the top bar
+    for i in layout.children:  # Reset the size of the all the widgets that make up the top bar
         if i == FloatBar:
             i.size = [Window.width / numTabs, tabSize * floatBarRatio]
             i.pos = [currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin]
@@ -165,32 +173,25 @@ def redraw(*args):
     CalParent.add_widget(CalWidget)
 
 
-# Used to figure out whether a tab is to the left or right of the current one.
-def getScreenIndex(name):
-    for i in range(0, screens.__len__()):
-        if name == screens[i]:
-            return i
-
-
 # Switches the screen to the one pressed by the button without transition
 def switchCalScreen(*args):
-    global currentTab
+    global overrideTab
     for i in screenList:
         if args[0].text[
-           len("[color=ffffff][size=24]"):-len("[/size][/color]")] == i.name and i.name != screenManager.current:
-            if getScreenIndex(i.name) > getScreenIndex(screenManager.current):
-                screenManager.transition.direction = "left"
-            else:
-                screenManager.transition.direction = "right"
-            animateFloatBar(getScreenIndex(i.name))
+           len("[color=ffffff][size=24]"):-len("[/size][/color]")] == i.name and i.name != carousel.current_slide.name:
+            overrideTab = screens.index(i.name)
             # Animate the floatbar
-            screenManager.current = i.name
+            carousel.load_slide(i)
             # Animates the whole screen except the bar on top
 
 
-def animateFloatBar(tab):
+def animateFloatBar(tab, *args):
     global currentTab
-    currentTab = tab
+    if len(args) > 0:
+        currentTab = screens.index(args[0].name)
+    else:
+        currentTab = tab
+    Animation().stop_all(FloatBar)
     Animation(x=Window.width / numTabs * currentTab, y=FloatBar.pos[1], duration=.25,
               transition=AnimationTransition.out_sine).start(FloatBar)
     # out_sine looks pretty good, I think.
@@ -252,6 +253,9 @@ def makeCalWidget():
 
 class Calendar(App):
     def build(self):
+        global carousel
+        carousel = FloatCarousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize),
+                                 direction="left")
         layout = GridLayout()
         # Put everything in a GridLayout
         drawGui(layout, Month=MonthNames[CurrentMonth])
@@ -263,16 +267,135 @@ class Calendar(App):
         # Use this for resizing
         MonthScreen = Screen(name=screens[3])
         MonthScreen.add_widget(CalWidget)
-        screenManager.add_widget(MonthScreen)
+        carousel.add_widget(MonthScreen)
         screenList.append(MonthScreen)
         for i in range(2, -1, -1):
             testScreen = Screen(name=screens[i])
             testScreen.add_widget(Label(text="This is a test!"))
             # You need a second screen for testing!
             screenList.append(testScreen)
-            screenManager.add_widget(testScreen)
+            carousel.add_widget(testScreen)
         layout.add_widget(screenManager)
+        layout.add_widget(carousel)
         return layout
+
+
+class FloatCarousel(Carousel):
+    def _prev_slide(self):
+        slides = self.slides
+        len_slides = len(slides)
+        index = self.index
+        if len_slides < 2:  # None, or 1 slide
+            return None
+        if len_slides == 2:
+            if index == 0:
+                return None
+            if index == 1:
+                return slides[0]
+        if self.loop and index == 0:
+            return slides[-1]
+        if index > 0:
+            return slides[index - 1]
+
+    previous_slide = AliasProperty(_prev_slide, None, bind=('slides', 'index'))
+
+    def _next_slide(self):
+        if len(self.slides) < 2:  # None, or 1 slide
+            return None
+        if len(self.slides) == 2:
+            if self.index == 0:
+                return self.slides[1]
+            if self.index == 1:
+                return None
+        if self.loop and self.index == len(self.slides) - 1:
+            return self.slides[0]
+        if self.index < len(self.slides) - 1:
+            return self.slides[self.index + 1]
+
+    next_slide = AliasProperty(_next_slide, None, bind=('slides', 'index'))
+
+    def on_touch_move(self, touch):
+        if self._get_uid('cavoid') in touch.ud:
+            return
+        if self._touch is not touch:
+            super(FloatCarousel, self).on_touch_move(touch)
+            return self._get_uid() in touch.ud
+        if touch.grab_current is not self:
+            return True
+        ud = touch.ud[self._get_uid()]
+        direction = self.direction
+        if ud['mode'] == 'unknown':
+            if direction[0] in ('r', 'l'):
+                distance = abs(touch.ox - touch.x)
+            else:
+                distance = abs(touch.oy - touch.y)
+            if distance > self.scroll_distance:
+                Clock.unschedule(self._change_touch_mode)
+                ud['mode'] = 'scroll'
+        else:
+            if direction[0] in ('r', 'l'):
+                self._offset += touch.dx
+                FloatBar.x -= touch.dx / numTabs # Changed line!
+            if direction[0] in ('t', 'b'):
+                self._offset += touch.dy
+                FloatBar.y -= touch.dy / numTabs # Changed line!
+        return True
+
+    def _start_animation(self, *args, **kwargs):
+        # compute target offset for ease back, next or prev
+        new_offset = 0
+        direction = kwargs.get('direction', self.direction)
+        is_horizontal = direction[0] in ['r', 'l']
+        extent = self.width if is_horizontal else self.height
+        min_move = kwargs.get('min_move', self.min_move)
+        _offset = kwargs.get('offset', self._offset)
+
+        if _offset < min_move * -extent:
+            new_offset = -extent
+        elif _offset > min_move * extent:
+            new_offset = extent
+
+        # if new_offset is 0, it wasnt enough to go next/prev
+        dur = self.anim_move_duration
+        if new_offset == 0:
+            dur = self.anim_cancel_duration
+
+        # detect edge cases if not looping
+        len_slides = len(self.slides)
+        index = self.index
+        if not self.loop or len_slides == 1:
+            is_first = (index == 0)
+            is_last = (index == len_slides - 1)
+            if direction[0] in ['r', 't']:
+                towards_prev = (new_offset > 0)
+                towards_next = (new_offset < 0)
+            else:
+                towards_prev = (new_offset < 0)
+                towards_next = (new_offset > 0)
+            if (is_first and towards_prev) or (is_last and towards_next):
+                new_offset = 0
+
+        anim = Animation(_offset=new_offset, d=dur, t=self.anim_type)
+        anim.cancel_all(self)
+
+        def _cmp(*l):
+            if self._skip_slide is not None:
+                self.index = self._skip_slide
+                self._skip_slide = None
+
+        anim.bind(on_complete=_cmp)
+        anim.start(self)
+        # Changed lines come after here.
+        global currentTab, overrideTab
+        if overrideTab is None:
+            if new_offset > 0:
+                currentTab = screens.index(self.next_slide.name) if self.next_slide is not None else currentTab
+            elif new_offset < 0:
+                currentTab = screens.index(self.previous_slide.name) if self.previous_slide is not None else currentTab
+        else:
+            currentTab = overrideTab
+            overrideTab = None
+        animateFloatBar(currentTab)
 
 
 if __name__ == "__main__":
