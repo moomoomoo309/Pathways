@@ -13,6 +13,7 @@ from kivy.graphics import Color
 from os.path import isfile
 from kivy.animation import Animation, AnimationTransition
 from kivy.uix.carousel import Carousel
+from functools import partial
 
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
@@ -43,7 +44,7 @@ online = False
 # Get images from the internet
 screenManager = ScreenManager()
 # The screen manager object
-carousel = Carousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize), direction="left")
+carousel = None
 # The carousel object
 screens = ["1 Day", "3 Day", "Week", "Month"]
 # The name of all of the screens
@@ -194,6 +195,7 @@ def animateFloatBar(tab, *args):
         currentTab = screens.index(args[0].name)
     else:
         currentTab = tab
+    Animation().stop_all(FloatBar)
     Animation(x=Window.width / numTabs * currentTab, y=FloatBar.pos[1], duration=.25,
               transition=AnimationTransition.out_sine).start(FloatBar)
     # out_sine looks pretty good, I think.
@@ -255,7 +257,8 @@ def makeCalWidget():
 
 class Calendar(App):
     def build(self):
-        carousel.bind(current_slide=animateFloatBar)
+        global carousel
+        carousel = FloatCarousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize), direction="left")
         layout = GridLayout()
         # Put everything in a GridLayout
         drawGui(layout, Month=MonthNames[CurrentMonth])
@@ -278,6 +281,99 @@ class Calendar(App):
         layout.add_widget(screenManager)
         layout.add_widget(carousel)
         return layout
+
+class FloatCarousel(Carousel):
+    def on_touch_move(self, touch):
+        if self._get_uid('cavoid') in touch.ud:
+            return
+        if self._touch is not touch:
+            super(FloatCarousel, self).on_touch_move(touch)
+            return self._get_uid() in touch.ud
+        if touch.grab_current is not self:
+            return True
+        ud = touch.ud[self._get_uid()]
+        direction = self.direction
+        if ud['mode'] == 'unknown':
+            if direction[0] in ('r', 'l'):
+                distance = abs(touch.ox - touch.x)
+            else:
+                distance = abs(touch.oy - touch.y)
+            if distance > self.scroll_distance:
+                Clock.unschedule(self._change_touch_mode)
+                ud['mode'] = 'scroll'
+        else:
+            if direction[0] in ('r', 'l'):
+                self._offset += touch.dx
+                FloatBar.x -= touch.dx/numTabs
+            if direction[0] in ('t', 'b'):
+                self._offset += touch.dy
+                FloatBar.y -= touch.dy/numTabs
+        return True
+
+    def on_touch_up(self, touch):
+        if self._get_uid('cavoid') in touch.ud:
+            return
+        if self in [x() for x in touch.grab_list]:
+            touch.ungrab(self)
+            self._touch = None
+            ud = touch.ud[self._get_uid()]
+            if ud['mode'] == 'unknown':
+                Clock.unschedule(self._change_touch_mode)
+                super(FloatCarousel, self).on_touch_down(touch)
+                Clock.schedule_once(partial(self._do_touch_up, touch), .1)
+            else:
+                self._start_animation()
+
+        else:
+            if self._touch is not touch and self.uid not in touch.ud:
+                super(FloatCarousel, self).on_touch_up(touch)
+        return self._get_uid() in touch.ud
+
+    def _start_animation(self, *args, **kwargs):
+        # compute target offset for ease back, next or prev
+        new_offset = 0
+        direction = kwargs.get('direction', self.direction)
+        is_horizontal = direction[0] in ['r', 'l']
+        extent = self.width if is_horizontal else self.height
+        min_move = kwargs.get('min_move', self.min_move)
+        _offset = kwargs.get('offset', self._offset)
+
+        if _offset < min_move * -extent:
+            new_offset = -extent
+        elif _offset > min_move * extent:
+            new_offset = extent
+
+        # if new_offset is 0, it wasnt enough to go next/prev
+        dur = self.anim_move_duration
+        if new_offset == 0:
+            dur = self.anim_cancel_duration
+
+        # detect edge cases if not looping
+        len_slides = len(self.slides)
+        index = self.index
+        if not self.loop or len_slides == 1:
+            is_first = (index == 0)
+            is_last = (index == len_slides - 1)
+            if direction[0] in ['r', 't']:
+                towards_prev = (new_offset > 0)
+                towards_next = (new_offset < 0)
+            else:
+                towards_prev = (new_offset < 0)
+                towards_next = (new_offset > 0)
+            if (is_first and towards_prev) or (is_last and towards_next):
+                new_offset = 0
+
+        anim = Animation(_offset=new_offset, d=dur, t=self.anim_type)
+        anim.cancel_all(self)
+
+        def _cmp(*l):
+            if self._skip_slide is not None:
+                self.index = self._skip_slide
+                self._skip_slide = None
+
+        anim.bind(on_complete=_cmp)
+        anim.start(self)
+        animateFloatBar(currentTab)
 
 
 if __name__ == "__main__":
