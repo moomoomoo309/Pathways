@@ -1,5 +1,6 @@
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.properties import AliasProperty
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.button import Button, ButtonBehavior
 from kivy.uix.gridlayout import GridLayout
@@ -52,6 +53,8 @@ screenList = []
 # A list containing all of the screens
 CurrentMonth = date.today().month - 1  # It's table indices (0-11), not month count (1-12)
 # The current month
+overrideTab = None
+# Forces the tab to be used to be this one.
 Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
               "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
               "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
@@ -150,7 +153,7 @@ def redraw(*args):
     layout.size = (Window.width, Window.height)
     topBarBackground.clear()
     drawTopBarBackground()
-    for i in layout.children:  #Reset the size of the all the widgets that make up the top bar
+    for i in layout.children:  # Reset the size of the all the widgets that make up the top bar
         if i == FloatBar:
             i.size = [Window.width / numTabs, tabSize * floatBarRatio]
             i.pos = [currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin]
@@ -172,18 +175,11 @@ def redraw(*args):
 
 # Switches the screen to the one pressed by the button without transition
 def switchCalScreen(*args):
-    global currentTab
-    print(args)
+    global overrideTab
     for i in screenList:
         if args[0].text[
            len("[color=ffffff][size=24]"):-len("[/size][/color]")] == i.name and i.name != carousel.current_slide.name:
-            print("{} > {}".format(screens.index(i.name), screens.index(carousel.current_slide.name)))
-            print(screens.index(i.name) > screens.index(carousel.current_slide.name))
-            if screens.index(i.name) > screens.index(carousel.current_slide.name):
-                carousel.direction = "left"
-            else:
-                carousel.direction = "right"
-            animateFloatBar(screens.index(i.name))
+            overrideTab = screens.index(i.name)
             # Animate the floatbar
             carousel.load_slide(i)
             # Animates the whole screen except the bar on top
@@ -258,7 +254,8 @@ def makeCalWidget():
 class Calendar(App):
     def build(self):
         global carousel
-        carousel = FloatCarousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize), direction="left")
+        carousel = FloatCarousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize),
+                                 direction="left")
         layout = GridLayout()
         # Put everything in a GridLayout
         drawGui(layout, Month=MonthNames[CurrentMonth])
@@ -282,7 +279,41 @@ class Calendar(App):
         layout.add_widget(carousel)
         return layout
 
+
 class FloatCarousel(Carousel):
+    def _prev_slide(self):
+        slides = self.slides
+        len_slides = len(slides)
+        index = self.index
+        if len_slides < 2:  # None, or 1 slide
+            return None
+        if len_slides == 2:
+            if index == 0:
+                return None
+            if index == 1:
+                return slides[0]
+        if self.loop and index == 0:
+            return slides[-1]
+        if index > 0:
+            return slides[index - 1]
+
+    previous_slide = AliasProperty(_prev_slide, None, bind=('slides', 'index'))
+
+    def _next_slide(self):
+        if len(self.slides) < 2:  # None, or 1 slide
+            return None
+        if len(self.slides) == 2:
+            if self.index == 0:
+                return self.slides[1]
+            if self.index == 1:
+                return None
+        if self.loop and self.index == len(self.slides) - 1:
+            return self.slides[0]
+        if self.index < len(self.slides) - 1:
+            return self.slides[self.index + 1]
+
+    next_slide = AliasProperty(_next_slide, None, bind=('slides', 'index'))
+
     def on_touch_move(self, touch):
         if self._get_uid('cavoid') in touch.ud:
             return
@@ -304,30 +335,11 @@ class FloatCarousel(Carousel):
         else:
             if direction[0] in ('r', 'l'):
                 self._offset += touch.dx
-                FloatBar.x -= touch.dx/numTabs
+                FloatBar.x -= touch.dx / numTabs # Changed line!
             if direction[0] in ('t', 'b'):
                 self._offset += touch.dy
-                FloatBar.y -= touch.dy/numTabs
+                FloatBar.y -= touch.dy / numTabs # Changed line!
         return True
-
-    def on_touch_up(self, touch):
-        if self._get_uid('cavoid') in touch.ud:
-            return
-        if self in [x() for x in touch.grab_list]:
-            touch.ungrab(self)
-            self._touch = None
-            ud = touch.ud[self._get_uid()]
-            if ud['mode'] == 'unknown':
-                Clock.unschedule(self._change_touch_mode)
-                super(FloatCarousel, self).on_touch_down(touch)
-                Clock.schedule_once(partial(self._do_touch_up, touch), .1)
-            else:
-                self._start_animation()
-
-        else:
-            if self._touch is not touch and self.uid not in touch.ud:
-                super(FloatCarousel, self).on_touch_up(touch)
-        return self._get_uid() in touch.ud
 
     def _start_animation(self, *args, **kwargs):
         # compute target offset for ease back, next or prev
@@ -373,6 +385,16 @@ class FloatCarousel(Carousel):
 
         anim.bind(on_complete=_cmp)
         anim.start(self)
+        # Changed lines come after here.
+        global currentTab, overrideTab
+        if overrideTab is None:
+            if new_offset > 0:
+                currentTab = screens.index(self.next_slide.name) if self.next_slide is not None else currentTab
+            elif new_offset < 0:
+                currentTab = screens.index(self.previous_slide.name) if self.previous_slide is not None else currentTab
+        else:
+            currentTab = overrideTab
+            overrideTab = None
         animateFloatBar(currentTab)
 
 
