@@ -55,7 +55,7 @@ CurrentMonth = date.today().month - 1  # It's table indices (0-11), not month co
 # The current month
 overrideTab = None
 # Forces the tab to be used to be this one.
-Images = {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+Images = {10: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
               "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
               "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
               "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
@@ -148,9 +148,9 @@ class CalendarGrid(GridLayout):
 
 
 # Redraw the whole thing on resize
-def redraw(*args):
-    layout = CalWidget.parent.parent.parent
-    layout.size = (Window.width, Window.height)
+def redraw(win, width, height):
+    layout = CalWidget.parent.parent.parent.parent
+    CalWidget.parent.parent.parent.size = (width, height - topBarSize - tabMargin - tabSize)
     topBarBackground.clear()
     drawTopBarBackground()
     for i in layout.children:  # Reset the size of the all the widgets that make up the top bar
@@ -158,14 +158,14 @@ def redraw(*args):
             i.size = [Window.width / numTabs, tabSize * floatBarRatio]
             i.pos = [currentTab * Window.width / numTabs, Window.height - topBarSize - tabSize - tabMargin]
         elif isinstance(i, Button):
-            i.pos = (getTabButtonPos(i.i))
-            i.size = (getTabButtonSize())
+            i.pos = (getTabButtonPos(i.i, width, height))
+            i.size = (getTabButtonSize(width))
         elif isinstance(i, Label):
-            i.pos = (-1, Window.height - topBarSize)
-            i.size = (Window.width, topBarSize)
+            i.pos = (-1, height - topBarSize)
+            i.size = (width, topBarSize)
         elif isinstance(i, ScreenManager):
             i.pos = (0, 0)
-            i.size = (Window.width, Window.height - topBarSize - tabSize - tabMargin)
+            i.size = (width, height - topBarSize - tabSize - tabMargin)
     CalParent = CalWidget.parent
     CalParent.remove_widget(CalWidget)
     global CalWidget
@@ -185,24 +185,21 @@ def switchCalScreen(*args):
             # Animates the whole screen except the bar on top
 
 
-def animateFloatBar(tab, *args):
+def animateFloatBar(tab, dur):
     global currentTab
-    if len(args) > 0:
-        currentTab = screens.index(args[0].name)
-    else:
-        currentTab = tab
+    currentTab = tab
     Animation().stop_all(FloatBar)
-    Animation(x=Window.width / numTabs * currentTab, y=FloatBar.pos[1], duration=.25,
+    Animation(x=Window.width / numTabs * currentTab, y=FloatBar.pos[1], duration=dur if dur else .25,
               transition=AnimationTransition.out_sine).start(FloatBar)
     # out_sine looks pretty good, I think.
 
 
-def getTabButtonPos(i):
-    return i * Window.width / numTabs, Window.height - topBarSize - tabMargin - tabSize * (1 - floatBarRatio)
+def getTabButtonPos(i, width, height):
+    return i * width / numTabs, height - topBarSize - tabMargin - tabSize * (1 - floatBarRatio)
 
 
-def getTabButtonSize():
-    return Window.width / numTabs, tabSize
+def getTabButtonSize(width):
+    return width / numTabs, tabSize
 
 
 def drawTopBarBackground():
@@ -222,9 +219,9 @@ def drawGui(self, **kwargs):
     self.canvas.before.add(topBarBackground)
     # Add text for tabs
     for i in range(0, 4):
-        btn = Button(text_size=getTabButtonSize(), size=getTabButtonSize(),
+        btn = Button(text_size=getTabButtonSize(Window.width), size=getTabButtonSize(Window.width),
                      text="[color=ffffff][size=24]" + screens[i] + "[/size][/color]",
-                     background_color=(1, 1, 1, 0), pos=getTabButtonPos(i),
+                     background_color=(1, 1, 1, 0), pos=getTabButtonPos(i, Window.width, Window.height),
                      markup=True, halign="center", valign="middle", on_press=switchCalScreen)
         btn.i = i
         self.add_widget(btn)
@@ -255,7 +252,7 @@ class Calendar(App):
     def build(self):
         global carousel
         carousel = FloatCarousel(size=(Window.width, Window.height - topBarSize - tabMargin - tabSize),
-                                 direction="left")
+                                 direction="left", min_move=.1)
         layout = GridLayout()
         # Put everything in a GridLayout
         drawGui(layout, Month=MonthNames[CurrentMonth])
@@ -265,13 +262,15 @@ class Calendar(App):
         global CalWidget
         CalWidget = makeCalWidget()
         # Use this for resizing
+        layout2=GridLayout()
         MonthScreen = Screen(name=screens[3])
         MonthScreen.add_widget(CalWidget)
+        MonthScreen.add_widget(layout2)
         carousel.add_widget(MonthScreen)
         screenList.append(MonthScreen)
         for i in range(2, -1, -1):
             testScreen = Screen(name=screens[i])
-            testScreen.add_widget(Label(text="This is a test!"))
+            testScreen.add_widget(AsyncImage(source=getImageSource(None),allow_stretch=True, keep_ratio=False))
             # You need a second screen for testing!
             screenList.append(testScreen)
             carousel.add_widget(testScreen)
@@ -335,10 +334,10 @@ class FloatCarousel(Carousel):
         else:
             if direction[0] in ('r', 'l'):
                 self._offset += touch.dx
-                FloatBar.x -= touch.dx / numTabs # Changed line!
+                FloatBar.x -= touch.dx / numTabs  # Changed line!
             if direction[0] in ('t', 'b'):
                 self._offset += touch.dy
-                FloatBar.y -= touch.dy / numTabs # Changed line!
+                FloatBar.y -= touch.dy / numTabs  # Changed line!
         return True
 
     def _start_animation(self, *args, **kwargs):
@@ -395,7 +394,7 @@ class FloatCarousel(Carousel):
         else:
             currentTab = overrideTab
             overrideTab = None
-        animateFloatBar(currentTab)
+        animateFloatBar(currentTab, dur)
 
 
 if __name__ == "__main__":
