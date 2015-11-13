@@ -1,4 +1,7 @@
 # A normal asyncimage with an on_press function!
+from kivy.uix.behaviors import ButtonBehavior
+from kivy.uix.image import AsyncImage
+
+
 class AsyncImageButton(ButtonBehavior, AsyncImage):
-    def on_press(self):
-        self.source = getImageSource(self.source)
+    pass
