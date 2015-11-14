@@ -1,24 +1,22 @@
 import calendar
 from datetime import date, datetime
-from time import sleep
-from kivy.app import App
-from kivy.core.window import Window
-from kivy.uix.widget import Widget
 from os.path import isfile
 from random import randint
-from kivy.animation import Animation, AnimationTransition
-from kivy.clock import Clock
-from kivy.graphics import Color
-from kivy.uix.button import Button
-from kivy.uix.carousel import Carousel
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.image import AsyncImage
-from kivy.uix.label import Label
-from kivy.uix.screenmanager import ScreenManager, Screen
 
+from kivy.animation import Animation, AnimationTransition
+from kivy.app import App
+from kivy.clock import Clock
+from kivy.core.window import Window
+from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
+from kivy.uix.button import Button
+from kivy.uix.carousel import Carousel
+from kivy.uix.image import AsyncImage
+from kivy.uix.label import Label
+from kivy.uix.screenmanager import Screen
+from kivy.uix.widget import Widget
 
 from Calendar import Calendar30Days
 
@@ -96,12 +94,12 @@ class TabView(Widget):
                         else:
                             j += 1
         self.MonthLength = calendar.monthrange(datetime.now().year, datetime.now().month)[1]
-        self.carousel = FloatCarousel(size=(self.size[0], self.size[1]-self.topBarSize-self.tabMargin-self.tabSize),
+        self.carousel = FloatCarousel(
+            size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize),
             direction="left", min_move=.1, screenNames=self.screenNames)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=MonthNames[self.CurrentMonth])
-        self.canvas.before.add(self.topBarBackground)
         # Draw the top bar
         self.CalWidget = self._makeCalWidget()
         # Use this for resizing
@@ -111,7 +109,7 @@ class TabView(Widget):
         self.screenList.append(MonthScreen)
         for i in range(2, -1, -1):
             testScreen = Screen(name=self.screenNames[i])
-            testScreen.add_widget(AsyncImage(source=self._getImageSource(None), allow_stretch=True, keep_ratio=False))
+            testScreen.add_widget(Label(text="Test"))
             # You need a second screen for testing!
             self.screenList.append(testScreen)
             self.carousel.add_widget(testScreen)
@@ -141,10 +139,11 @@ class TabView(Widget):
         CalParent.add_widget(self.CalWidget)
 
     def add_widget(self, widget, index=0):
-        if index==0:
-            self.screenList.append(widget)
-        else:
-            self.screenList.insert(widget,index)
+        if isinstance(widget, Screen):
+            if index == 0:
+                self.screenList.append(widget)
+            else:
+                self.screenList.insert(widget, index)
         super(TabView, self).add_widget(widget, index)
 
     # Switches the screen to the one pressed by the button without transition
@@ -175,8 +174,6 @@ class TabView(Widget):
     def _drawTopBarBackground(self):
         self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
                                             size=(self.size[0], self.topBarSize)))  # Draw the top bar
-        self.topBarBackground.add(
-            Rectangle(pos=(0, self.size[1] - self.tabMargin), size=(self.size[0], self.tabMargin)))
         self.topBarBackground.add(Color(*self.tabBarColor))
         self.topBarBackground.add(Rectangle(pos=(0, self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
                                             size=(self.size[0], self.tabSize)))  # Draw the tabs bar
@@ -210,13 +207,13 @@ class TabView(Widget):
 
         self.add_widget(self.FloatBar)
         # Add the float bar
+
     def _makeCalWidget(self):
         return Calendar30Days(MonthLength=self.MonthLength, pos=(0, self.size[1] - self.tabMargin - self.topBarSize),
                               MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
                               size=(self.size[0], self.size[1] - self.tabMargin - self.topBarSize),
                               online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
         # The monthwidget did nothing, so it's gone!
-
 
     def _getImageSource(self, blockedImage):
         if self.randomImages and self.CurrentMonth in self.Images is not None and self.Images[
