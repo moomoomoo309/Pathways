@@ -359,7 +359,7 @@ class tabview(App):
     def build(self):
         app = TabView(size=(Window.width, Window.height),
                       screenList=(Label(text="Test"), Label(text="Test"), Label(text="Test")))
-#        app.CalWidget = app._makeCalWidget()
+        #        app.CalWidget = app._makeCalWidget()
         Window.bind(on_resize=partial(resize, app))
         return app
 
