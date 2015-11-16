@@ -1,8 +1,7 @@
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.togglebutton import ToggleButton
 
-from kivy.properties import BooleanProperty, BoundedNumericProperty, ListProperty
-from kivy.uix.widget import Widget
+from kivy.properties import BooleanProperty, BoundedNumericProperty
 
 from AsyncImageButton import AsyncImageButton
 
@@ -19,7 +18,7 @@ class Calendar30Days(GridLayout):
 
     def __init__(self, **kwargs):
         super(Calendar30Days, self).__init__()  # I need this line for reasons.
-        getImageSource = kwargs["getImageSource"]
+        self.getImageSource = kwargs["getImageSource"] if "getImageSource" in kwargs else lambda x: "CalendarInactive.png"
         self.size = kwargs["size"] if "size" in kwargs else [100,100]
         self.pos = kwargs["pos"] if "pos" in kwargs else [0,0]
         self.bind(size=self.resize)
@@ -35,7 +34,7 @@ class Calendar30Days(GridLayout):
         self.gridSize = (self.size[0] / self.cols, self.size[1] / self.rows)
         print(self.size,self.pos)
         for i in range(0, self.MonthStart):
-            self.Layout.add_widget(AsyncImageButton(source=getImageSource(None), allow_stretch=True, keep_ratio=False,
+            self.Layout.add_widget(AsyncImageButton(source=self.getImageSource(None), allow_stretch=True, keep_ratio=False,
                                              size=self.gridSize))  # If the month doesn't start on a Monday, you need empty days.
 
         for i in range(0, self.MonthLength):
@@ -46,9 +45,9 @@ class Calendar30Days(GridLayout):
             # The group means they act as radio buttons, so only one is toggleable at a time.
         for i in range(0, self.rows * self.cols - self.MonthLength - self.MonthStart):
             self.Layout.add_widget(
-                AsyncImageButton(source=getImageSource(None), allow_stretch=True, keep_ratio=False, size=self.gridSize))
+                AsyncImageButton(source=self.getImageSource(None), allow_stretch=True, keep_ratio=False, size=self.gridSize))
             # The empty images after the month in the calendar
         self.add_widget(self.Layout)
 
-    def resize(self,_,__):
+    def resize(self,*args):
         self.gridSize = (self.size[0] / self.cols, self.size[1] / self.rows)
