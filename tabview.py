@@ -10,7 +10,8 @@ from kivy.core.window import Window
 from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial, \
+    ObjectProperty
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
@@ -60,12 +61,13 @@ class TabView(Widget):
     currentTab = BoundedNumericProperty(3, min=0)
     # The tab currently selected
     screenList = ListProperty([])
+    # A list of the screens in the carousel.
+    CalWidget = ObjectProperty(None)
+    # The calendar widget object, so it can be referenced on resize.
 
     def __init__(self, **kwargs):
         super(TabView, self).__init__()  # I need this line for reasons.
         # Remove any images which don't exist or are online if online is false
-        self.CalWidget = None
-        # The calendar widget object, so it can be referenced on resize.
         self.FloatBar = None
         # The float bar object
         self.carousel = None
@@ -101,7 +103,7 @@ class TabView(Widget):
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=MonthNames[self.CurrentMonth])
         # Draw the top bar
-        self.CalWidget = self._makeCalWidget()
+        self.CalWidget = self.CalWidget if self.CalWidget is not None else self._makeCalWidget()
         # Use this for resizing
         MonthScreen = Screen(name=self.screenNames[3])
         MonthScreen.add_widget(self.CalWidget)
@@ -132,7 +134,7 @@ class TabView(Widget):
                 i.size = (self.size[0], self.topBarSize)
             elif isinstance(i, FloatCarousel):
                 i.pos = (0, 0)
-                i.size = (self.pos[0], self.pos[1] - self.topBarSize - self.tabMargin - self.tabSize)
+                i.size = (self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize)
         CalParent = self.CalWidget.parent
         CalParent.remove_widget(self.CalWidget)
         self.CalWidget = self._makeCalWidget()
@@ -209,9 +211,9 @@ class TabView(Widget):
         # Add the float bar
 
     def _makeCalWidget(self):
-        return Calendar30Days(MonthLength=self.MonthLength, pos=(0, self.size[1] - self.tabMargin - self.topBarSize),
+        return Calendar30Days(MonthLength=self.MonthLength, pos=(0, 0),
                               MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
-                              size=(self.size[0], self.size[1] - self.tabMargin - self.topBarSize),
+                              size=(self.size[0], self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
                               online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
         # The monthwidget did nothing, so it's gone!
 
@@ -357,7 +359,7 @@ class tabview(App):
     def build(self):
         app = TabView(size=(Window.width, Window.height),
                       screenList=(Label(text="Test"), Label(text="Test"), Label(text="Test")))
-        app.add_widget(app._makeCalWidget())
+#        app.CalWidget = app._makeCalWidget()
         Window.bind(on_resize=partial(resize, app))
         return app
 
