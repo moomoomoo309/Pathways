@@ -1,271 +1,363 @@
+import calendar
+from datetime import date, datetime
+from os.path import isfile
+from random import randint
+
+from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.core.window import Window
+from kivy.graphics import Color
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial, \
+    ObjectProperty
+from kivy.uix.button import Button
+from kivy.uix.carousel import Carousel
+from kivy.uix.image import AsyncImage
+from kivy.uix.label import Label
+from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
-from collections import namedtuple
-from collections import deque
-from kivy.graphics import *
-from math import sqrt
-#We'll import these when they're needed.
-#from kivy.uix.button import Button
-#from kivy.uix.relativelayout import RelativeLayout
-#from kivy.uix.splitter import Splitter
 
-SquareSize = 32  #Size of each Square
-MarginSize = 2  #Size of space between the Squares
-SquareList = []
-Point = namedtuple("Point", "x y")
-lastSquare = {"pos": (0, 0), "size": (0, 0), "colored": False}  #Not as pretty as a Lua table, but it works.
-lastColor = True
+from Calendar import Calendar30Days
 
-#The color format is in RGB, 1 being 255, 0 being 0.
-StartSquarePos = None  #Position values are set when App builds and runs, based on window size. 
-EndSquarePos = None
-LastStartSquarePos = None
-LastEndSquarePos = None
-#rgb values in tuples for various rectangle states
-StartColorNormal = (0, 1, 0)
-StartColorMargin = (0, .75, 1)
-EndColorNormal = (1, 0, 0)
-EndColorMargin = (0, .75, 1)
-MarginColorNormal = (0, .75, 1)
-MarginColorToggled = (.5, .5, .5)
-RectColorToggled = (.4, .4, .4)
-RectColorNormal = (1, 1, 1)
-RectSize = (SquareSize + MarginSize, SquareSize + MarginSize)
-GrabbedEndPoint = None  #True for start, False for end, None for neither
-ManualMonitorSize = (1600, 1200)  #Size of your monitor, so when the window is maximized, the grid will scale.
+# Length of each month
+Months = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31,
+          "September": 31, "October": 31, "November": 30, "December": 31}
+# Name of each month
+MonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+              "November", "December"]
 
 
-#Set to None if you want it to just use the default window size
-#1600x1200 is a high enough resolution that the grid fills a 17" diagonal laptop monitor
+class TabView(Widget):
+    Images = DictProperty(
+        {10: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+              "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
+              "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
+              "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
+              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
+              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})  # Replace these with pictures of your choice
 
+    screenNames = ListProperty(["1 Day", "3 Day", "Week", "Month"])
+    # The name of all of the screens
+    randomImages = BooleanProperty(False)
+    # Use random images to fill the empty days of the calendar
+    online = BooleanProperty(True)
+    # Get images from the internet
+    topBarSize = BoundedNumericProperty(75, min=0)
+    # The size of the top bar
+    tabSize = BoundedNumericProperty(50, min=0)
+    # The size of the tabs vertically.
+    tabMargin = BoundedNumericProperty(2, min=0)
+    # The space between the top bar and the tab bar.
+    numTabs = BoundedNumericProperty(4, min=1)
+    # The number of tabs displayed at once
+    floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
+    # How much of the tab bar should be taken up by the float bar
+    tabBarColor = ListProperty([1, 0, 0])
+    # Color of the tab bar
+    floatBarColor = ListProperty([.75, 0, 0, 1])
+    # Color of the thin bar below the tabs on the tab bar
+    currentTab = BoundedNumericProperty(3, min=0)
+    # The tab currently selected
+    screenList = ListProperty([])
+    # A list of the screens in the carousel.
+    CalWidget = ObjectProperty(None)
+    # The calendar widget object, so it can be referenced on resize.
 
-def findSquare(pos, allowRepeats):  #Finds the Square at the given coords
-    global lastSquare
-    for i in SquareList:
-        if i["pos"].x < pos[0] <= i["pos"].x + i["size"].x and i["pos"].y <= pos[1] < i["pos"].y + i["size"].y and (
-                        i != lastSquare or allowRepeats):
-            lastSquare = i
-            return i
-
-
-def getSquareCoords(pos):  #finds x, y of a square's center position
-    return pos[0] - pos[0] % (MarginSize + SquareSize), pos[1] - pos[1] % (MarginSize + SquareSize)
-
-
-def updateRect(self, touch, isTouchDown, foundSquare):
-    if foundSquare is None:
-        foundSquare = findSquare(touch.pos, isTouchDown)
-    if foundSquare is not None and StartSquarePos != foundSquare["pos"] != EndSquarePos:  #If it found a NEW square
-        foundSquare["colored"] = lastColor  #Color them the same color as the one from on_touch_down
-        with self.canvas:  #Re-draw the rectangle to be changed
-            if foundSquare["colored"]:
-                Color(*MarginColorToggled)  #Unpack the tuple the color is stored in
-            else:
-                Color(*MarginColorNormal)
-            Rectangle(pos=(foundSquare["pos"].x, foundSquare["pos"].y),
-                      size=(foundSquare["size"].x, foundSquare["size"].y))
-            #Draw the margins of the rectangle
-            if foundSquare["colored"]:
-                Color(*RectColorToggled)
-            else:
-                Color(*RectColorNormal)
-            Rectangle(pos=(foundSquare["pos"].x, foundSquare["pos"].y),
-                      size=(foundSquare["size"].x - MarginSize, foundSquare["size"].y - MarginSize))
-            #Draw the actual rectangle
-
-
-def drawStartAndEnd(self):
-    global LastStartSquarePos, LastEndSquarePos
-    with self.canvas:
-        Color(*StartColorMargin)  #Draw Margin of start point
-        Rectangle(pos=StartSquarePos, size=RectSize)
-        Color(*StartColorNormal)  #Draw actual start point
-        Rectangle(pos=StartSquarePos, size=(SquareSize, SquareSize))
-        Color(*EndColorMargin)  #Draw Margin of end point
-        Rectangle(pos=EndSquarePos, size=RectSize)
-        Color(*EndColorNormal)  #Draw actual end point
-        Rectangle(pos=EndSquarePos, size=(SquareSize, SquareSize))
-    if GrabbedEndPoint is not None:
-        if GrabbedEndPoint:  #Save the location of the last start/end point so you can re-draw the rectangle underneath
-            LastStartSquarePos = StartSquarePos
-        else:
-            LastEndSquarePos = EndSquarePos
-
-
-def updateStartAndEnd(self, touch):
-    global StartSquarePos, EndSquarePos
-    foundSquare = findSquare(touch.pos, False)
-    if foundSquare is not None and not foundSquare["colored"]:  #Don't put the start/end point on a colored square
-        if GrabbedEndPoint and foundSquare["pos"] != EndSquarePos:
-            StartSquarePos = getSquareCoords(touch.pos)
-        elif not GrabbedEndPoint and foundSquare["pos"] != StartSquarePos:
-            EndSquarePos = getSquareCoords(touch.pos)
-    if GrabbedEndPoint is not None:  #Re-draw the rectangle misplaced by the start/end point last time it moved
-        if GrabbedEndPoint:
-            with self.canvas:
-                if foundSquare is not None and foundSquare["colored"]:
-                    Color(*MarginColorToggled)  #Draw Margin of start point
-                    Rectangle(pos=LastStartSquarePos, size=RectSize)
-                    Color(*RectColorToggled)  #Draw actual start point
-                    Rectangle(pos=LastStartSquarePos, size=(SquareSize, SquareSize))
-                elif foundSquare is not None:
-                    Color(*MarginColorNormal)  #Draw Margin of start point
-                    Rectangle(pos=LastStartSquarePos, size=RectSize)
-                    Color(*RectColorNormal)  #Draw actual start point
-                    Rectangle(pos=LastStartSquarePos, size=(SquareSize, SquareSize))
-        else:
-            with self.canvas:
-                if foundSquare is not None and foundSquare["colored"]:
-                    Color(*MarginColorToggled)  #Draw Margin of start point
-                    Rectangle(pos=LastEndSquarePos, size=RectSize)
-                    Color(*RectColorToggled)  #Draw actual start point
-                    Rectangle(pos=LastEndSquarePos, size=(SquareSize, SquareSize))
-                elif foundSquare is not None:
-                    Color(*MarginColorNormal)  #Draw Margin of start point
-                    Rectangle(pos=LastEndSquarePos, size=RectSize)
-                    Color(*RectColorNormal)  #Draw actual start point
-                    Rectangle(pos=LastEndSquarePos, size=(SquareSize, SquareSize))
-
-
-def drawGrid(self, width, height):
-    global SquareList
-    for x in range(0, int(width / SquareSize)):
-        for y in range(0, int(height / SquareSize)):
-            with self.canvas:
-                testSquare = findSquare((x * SquareSize * 3 / 2, y * SquareSize * 3 / 2),
-                                        True)  #Make sure there isn't already a square at the given coordinates
-                if testSquare is None:
-                    Color(*MarginColorNormal)
-                    SquareList.append({"pos": Point(x * (SquareSize + MarginSize), y * (SquareSize + MarginSize)),
-                                       "size": Point(*RectSize), "colored": False})
-                    #Add a square to the given location (Margin included)
-                    Rectangle(pos=(x * (SquareSize + MarginSize), y * (SquareSize + MarginSize)), size=RectSize)
-                    Color(*RectColorNormal)
-                    Rectangle(pos=(x * (SquareSize + MarginSize), y * (SquareSize + MarginSize)),
-                              size=(SquareSize, SquareSize))
-                    #Draw the actual rectangle
-
-
-class AStar:  #this class will generate the optimal path between two points using heuristics
-    def distBetween(self, current, neighbor):  #helps to choose neighboring square that is closest to goal
-        return sqrt((current.x - neighbor.x) ** 2 + (current.y - neighbor.y) ** 2)
-
-    def heuristicEstimate(self, start, goal):  #euclidean heuristic; focuses on shorter path but runs longer
-        dx = abs(start.x - goal.x)
-        dy = abs(start.y - goal.y)
-        return (dx + dy) + (sqrt(2) - 2) * min(dx, dy)
-
-    def neighborNodes(self, current):  #pass must be replaced with code
-        pass
-
-    def constructPath(self, cameFrom, goal):  #generates path from most recent neighbor
-        path = deque()  #double-ended queue; can pop values on either end
-        node = goal
-        path.appendleft(node)
-        while node in cameFrom:  #keep track of nodes already reached
-            node = cameFrom[node]
-            path.appendleft(node)
-        return path
-
-    def getLowest(self, openSet, fScore):  #compares distances and selects shortest path
-        lowest = float("inf")
-        lowestNode = None
-        for node in openSet:
-            if fScore[node] < lowest:
-                lowest = fScore[node]
-                lowestNode = node
-        return lowestNode
-
-    def aStar(self, start, goal):  #updates sets and continues to compare paths between neighbors
-        cameFrom = {}
-        openSet = set([start])
-        closedSet = set()
-        gScore = {}  #distance of square from start node
-        fScore = {}  #distance of square from end node
-        gScore[start] = 0
-        #heuristic estimates the straight line distance between start and goal
-        fScore[start] = gScore[start] + self.heuristicEstimate(start, goal)
-        while len(openSet) != 0:
-            current = self.getLowest(openSet, fScore)
-            if current == goal:
-                return self.constructPath(cameFrom, goal)
-            openSet.remove(current)  #when node is reached, added to closedSet
-            closedSet.add(current)  #and removed from openSet
-            #compares gScore, fScore to select nodes closest to goal
-            for neighbor in self.neighborNodes(current):
-                tentative_gScore = gScore[current] + self.distBetween(current, neighbor)
-                if neighbor in closedSet and tentative_gScore >= gScore[neighbor]:
-                    continue
-                if neighbor not in closedSet or tentative_gScore < gScore[neighbor]:
-                    cameFrom[neighbor] = current
-                    gScore[neighbor] = tentative_gScore
-                    fScore[neighbor] = gScore[neighbor] + self.heuristicEstimate(neighbor, goal)
-                    if neighbor not in openSet:
-                        openSet.add(neighbor)
-        return 0
-
-
-class GridWidget(Widget):
     def __init__(self, **kwargs):
-        super(GridWidget, self).__init__(**kwargs)  #Don't ask why you need this line. You just do.
+        super(TabView, self).__init__()  # I need this line for reasons.
+        # Remove any images which don't exist or are online if online is false
+        self.FloatBar = None
+        # The float bar object
+        self.carousel = None
+        # The carousel object
+        self.screenList = []
+        # A list containing all of the screens
+        self.CurrentMonth = date.today().month - 1  # It's table indices (0-11), not month count (1-12)
+        # The current month
+        self.overrideTab = None
+        # Forces the tab to be used to be this one.
+        self.size = kwargs["size"] if "size" in kwargs else (100, 100)
+        self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
+        for i in self.Images:
+            if isinstance(i, (int, long)):
+                j = 0
+                while j < self.Images[i].__len__():
+                    if not self.online:
+                        if not isfile(self.Images[i][j]):
+                            self.Images[i].remove(self.Images[i][j])
+                        else:
+                            j += 1
+                    else:
+                        if not (self.Images[i][j][0:4] == "http" or self.Images[i][j][0:3] == "ftp") and not isfile(
+                                self.Images[i][j]):
+                            self.Images[i].remove(self.Images[i][j])
+                        else:
+                            j += 1
+        self.carousel = FloatCarousel(
+            size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize),
+            direction="left", min_move=.05, screenNames=self.screenNames)
+        # Put everything in a GridLayout
+        self.topBarBackground = InstructionGroup()
+        self._drawGui(Month=MonthNames[self.CurrentMonth])
+        # Draw the top bar
+        self.CalWidget = self.CalWidget if self.CalWidget is not None else makeCalWidget(self)
+        # Use this for resizing
+        for i in range(3, -1, -1):
+            testScreen = Screen(name=self.screenNames[i])
+            testScreen.add_widget(Label(text="Test"))
+            # You need a second screen for testing!
+            self.screenList.append(testScreen)
+            self.carousel.add_widget(testScreen)
+        self.add_widget(self.carousel)
 
-        global StartSquarePos, EndSquarePos
-        rawStartCoord = Window.width / 3  #Put it 1/3 the way in visual space horizontally
-        rawEndCoord = Window.width * 2 / 3  #Same as above, but 2/3 horizontally
-        rawHeight = Window.height / 2  #Put both halfway in visual space
-        StartSquarePos = getSquareCoords((rawStartCoord, rawHeight))
-        EndSquarePos = getSquareCoords((rawEndCoord, rawHeight))
-        if ManualMonitorSize is None:
-            drawGrid(self, Window.width, Window.height)  #Use the window size if a resolution is not provided
-        else:
-            drawGrid(self, *ManualMonitorSize)  #Otherwise, use the window size given.
-        drawStartAndEnd(self)
+    # Redraw the whole thing on resize
+    def resize(self):
+        self.topBarBackground.clear()
+        self._drawTopBarBackground()
+        for i in self.children:  # Reset the size of the all the widgets that make up the top bar
+            if i == self.FloatBar:
+                i.size = [self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio]
+                i.pos = [self.currentTab * self.size[0] / self.numTabs,
+                         self.size[1] - self.topBarSize - self.tabSize - self.tabMargin]
+            elif isinstance(i, Button):
+                i.pos = (self._getTabButtonPos(i.i))
+                i.size = (self._getTabButtonSize())
+            elif isinstance(i, Label):
+                i.pos = (-1, self.size[1] - self.topBarSize)
+                i.size = (self.size[0], self.topBarSize)
+            elif isinstance(i, FloatCarousel):
+                i.pos = (0, 0)
+                i.size = (self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize)
+            elif isinstance(i, Screen):
+                for j in i.children:
+                    if isinstance(j,Calendar30Days):
+                        i.pos = (0,0)
+                        i.size = (self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize)
 
-    def on_touch_down(self, touch):
-        global lastColor, GrabbedEndPoint
-        if getSquareCoords(touch.pos) == StartSquarePos:  #If the start point was clicked on.
-            GrabbedEndPoint = True
-        elif getSquareCoords(touch.pos) == EndSquarePos:  #If the end point was clicked on.
-            GrabbedEndPoint = False
+    def _add_widget(self, widget, index = 0):
+        super(Carousel, self).add_widget(widget)
 
-        foundSquare = findSquare(touch.pos, True)
-        if foundSquare is not None:
-            lastColor = not foundSquare["colored"]  #This mimics Pathfinding.js's behavior.
+    def add_widget(self, widget, index = 0):
+        if isinstance(widget, Screen):
+            if index == 0:
+                self.screenList[0].add_widget(widget)
+            else:
+                self.screenList[index].add_widget(widget)
 
-        if GrabbedEndPoint is None:
-            updateRect(self, touch, True,
-                       foundSquare)  #The foundSquare is given so it doesn't have to search for it twice.
-        drawStartAndEnd(self)  #The start and end points always must be drawn.
+    # Switches the screen to the one pressed by the button without transition
+    def _switchCalScreen(self, *args):
+        for i in self.screenList:
+            if args[0].text[
+               len("[color=ffffff][size=24]"):-len(
+                   "[/size][/color]")] == i.name and i.name != self.carousel.current_slide.name:
+                self.overrideTab = self.screenNames.index(i.name)
+                # Animate the floatbar
+                self.carousel.load_slide(i)
+                # Animates the whole screen except the bar on top
+
+    def _animateFloatBar(self, tab, dur):
+        self.currentTab = tab
+        Animation().stop_all(self.FloatBar)
+        Animation(x=self.size[0] / self.numTabs * self.currentTab, y=self.FloatBar.pos[1], duration=dur if dur else .25,
+                  transition=AnimationTransition.out_sine).start(self.FloatBar)
+        # out_sine looks pretty good, I think.
+
+    def _getTabButtonPos(self, i):
+        return i * self.size[0] / self.numTabs, self.height - self.topBarSize - self.tabMargin - self.tabSize * (
+            1 - self.floatBarRatio)
+
+    def _getTabButtonSize(self):
+        return self.size[0] / self.numTabs, self.tabSize
+
+    def _drawTopBarBackground(self):
+        self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
+                                            size=(self.size[0], self.topBarSize)))  # Draw the top bar
+        self.topBarBackground.add(Color(*self.tabBarColor))
+        self.topBarBackground.add(Rectangle(pos=(0, self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
+                                            size=(self.size[0], self.tabSize)))  # Draw the tabs bar
+        self.topBarBackground.add(Color(1, 1, 1))
+
+        # Draw the top bar
+
+    def _drawGui(self, Month):
+        self._drawTopBarBackground()
+        self.canvas.before.add(self.topBarBackground)
+        # Add text for tabs
+        for i in range(0, 4):
+            btn = Button(text_size=self._getTabButtonSize(), size=self._getTabButtonSize(),
+                         text="[color=ffffff][size=24]" + self.screenNames[i] + "[/size][/color]",
+                         background_color=(1, 1, 1, 0), pos=self._getTabButtonPos(i),
+                         markup=True, halign="center", valign="middle", on_press=self._switchCalScreen)
+            btn.i = i
+            self.add_widget(btn)
+
+        self.add_widget(Label(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
+                              text="[color=000000][size=36]" + Month + "[/color][/size]",
+                              pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
+                              valign="middle"))
+        # It's got markup in it for color and size, and the text is centered vertically and horizontally.
+        # The text is from the keyword argument "Month".
+        self.FloatBar = AsyncImage(source="FloatBar.png",
+                                   size=(self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio),
+                                   pos=(self.currentTab * self.size[0] / self.numTabs,
+                                        self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
+                                   allow_stretch=True, keep_ratio=False)
+
+        self.add_widget(self.FloatBar)
+        # Add the float bar
+
+    def _getImageSource(self, blockedImage):
+        if self.randomImages and self.CurrentMonth in self.Images is not None and self.Images[
+            self.CurrentMonth].__len__() > 0:
+            img = self.Images[self.CurrentMonth][randint(0, self.Images[self.CurrentMonth].__len__() - 1)]
+            if self.Images[self.CurrentMonth].__len__() > 1 and blockedImage is not None:
+                while img == blockedImage:
+                    img = self.Images[self.CurrentMonth][randint(0, self.Images[self.CurrentMonth].__len__() - 1)]
+            elif self.Images[self.CurrentMonth].__len__() <= 1:
+                return img
+            if isfile(img) or img[0:4] == "http" or img[0:3] == "ftp":
+                return img
+        return "CalendarInactive.png"
+
+
+class FloatCarousel(Carousel):
+    def _prev_slide(self):
+        slides = self.slides
+        len_slides = len(slides)
+        index = self.index
+        if len_slides < 2:  # None, or 1 slide
+            return None
+        if len_slides == 2:
+            if index == 0:
+                return None
+            if index == 1:
+                return slides[0]
+        if self.loop and index == 0:
+            return slides[-1]
+        if index > 0:
+            return slides[index - 1]
+
+    previous_slide = AliasProperty(_prev_slide, None, bind=('slides', 'index'))
+
+    def _next_slide(self):
+        if len(self.slides) < 2:  # None, or 1 slide
+            return None
+        if len(self.slides) == 2:
+            if self.index == 0:
+                return self.slides[1]
+            if self.index == 1:
+                return None
+        if self.loop and self.index == len(self.slides) - 1:
+            return self.slides[0]
+        if self.index < len(self.slides) - 1:
+            return self.slides[self.index + 1]
+
+    next_slide = AliasProperty(_next_slide, None, bind=('slides', 'index'))
 
     def on_touch_move(self, touch):
-        if GrabbedEndPoint is not None:
-            updateStartAndEnd(self, touch)  #If you're moving the start/end point
+        if self._get_uid('cavoid') in touch.ud:
+            return
+        if self._touch is not touch:
+            super(FloatCarousel, self).on_touch_move(touch)
+            return self._get_uid() in touch.ud
+        if touch.grab_current is not self:
+            return True
+        ud = touch.ud[self._get_uid()]
+        direction = self.direction
+        if ud['mode'] == 'unknown':
+            if direction[0] in ('r', 'l'):
+                distance = abs(touch.ox - touch.x)
+            else:
+                distance = abs(touch.oy - touch.y)
+            if distance > self.scroll_distance:
+                Clock.unschedule(self._change_touch_mode)
+                ud['mode'] = 'scroll'
         else:
-            updateRect(self, touch, False, None)  #If you're changing the color of rectangle(s)
-        drawStartAndEnd(self)
+            if direction[0] in ('r', 'l'):
+                self._offset += touch.dx
+                self.parent.FloatBar.x -= touch.dx / self.parent.numTabs  # Changed line!
+            if direction[0] in ('t', 'b'):
+                self._offset += touch.dy
+                self.parent.FloatBar.y -= touch.dy / self.parent.numTabs  # Changed line!
+        return True
 
-    def on_touch_up(self, touch):
-        global GrabbedEndPoint  #Resets var so the program doesn't assume the start/end point is grabbed.
-        GrabbedEndPoint = None
+    def _start_animation(self, *args, **kwargs):
+        # compute target offset for ease back, next or prev
+        new_offset = 0
+        direction = kwargs.get('direction', self.direction)
+        is_horizontal = direction[0] in ['r', 'l']
+        extent = self.width if is_horizontal else self.height
+        min_move = kwargs.get('min_move', self.min_move)
+        _offset = kwargs.get('offset', self._offset)
+
+        if _offset < min_move * -extent:
+            new_offset = -extent
+        elif _offset > min_move * extent:
+            new_offset = extent
+
+        # if new_offset is 0, it wasnt enough to go next/prev
+        dur = self.anim_move_duration
+        if new_offset == 0:
+            dur = self.anim_cancel_duration
+
+        # detect edge cases if not looping
+        len_slides = len(self.slides)
+        index = self.index
+        if not self.loop or len_slides == 1:
+            is_first = (index == 0)
+            is_last = (index == len_slides - 1)
+            if direction[0] in ['r', 't']:
+                towards_prev = (new_offset > 0)
+                towards_next = (new_offset < 0)
+            else:
+                towards_prev = (new_offset < 0)
+                towards_next = (new_offset > 0)
+            if (is_first and towards_prev) or (is_last and towards_next):
+                new_offset = 0
+
+        anim = Animation(_offset=new_offset, d=dur, t=self.anim_type)
+        anim.cancel_all(self)
+
+        def _cmp(*l):
+            if self._skip_slide is not None:
+                self.index = self._skip_slide
+                self._skip_slide = None
+
+        anim.bind(on_complete=_cmp)
+        anim.start(self)
+        # Changed lines come after here.
+        if self.parent.overrideTab is None:
+            if new_offset > 0:
+                self.parent.currentTab = self.parent.screenNames.index(
+                    self.next_slide.name) if self.next_slide is not None else self.parent.currentTab
+            elif new_offset < 0:
+                self.parent.currentTab = self.parent.screenNames.index(
+                    self.previous_slide.name) if self.previous_slide is not None else self.parent.currentTab
+        else:
+            self.parent.currentTab = self.parent.overrideTab
+            self.parent.overrideTab = None
+        self.parent._animateFloatBar(self.parent.currentTab, dur)
 
 
-class Grid(App):
+def resize(self, _, width, height):
+    self.size = (width, height)
+    self.resize()
+
+def makeCalWidget(self):
+    return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
+                          MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
+                          size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
+                          online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
+
+class tabview(App):
     def build(self):
-        #The following segment of code was supposed to overlay buttons on top as child widgets, but
-        #this did not work because of the way GridWidget was written; we will discuss this later.
-        '''GridWidget.add_widget(GridWidget(), Button(size = (100,75),
-                     pos = (50, 50),                #the GridWidget is the parent widget and the Buttons
-                     text = "A* Search",            #exist as its children and should spawn only when
-                     color = (0, 1, 0, 1),          #GridWidget is built
-                     font_size = 45), index = 0, canvas = 'after')
-        GridWidget.add_widget(GridWidget(), Button(size = (100,75),
-                     pos = (50, 40),
-                     text = "Best-First Search",
-                     color = (1, 1, 0, 1),
-                     font_size = 45), index = 1, canvas = 'after')'''
-        return GridWidget()
+        app = TabView(size=(Window.width, Window.height),
+                      screenList=(Label(text="Test"), Label(text="Test"), Label(text="Test")))
+        app.add_widget(app)
+        return app
 
 
 if __name__ == "__main__":
-    Grid().run()
+    tabview().run()
