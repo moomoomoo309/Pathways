@@ -4,10 +4,11 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.properties import BooleanProperty, BoundedNumericProperty
 
 from AsyncImageButton import AsyncImageButton
+from kivy.uix.widget import Widget
 
 
 # The grid which contains the 30(ish) days for each month
-class Calendar30Days(GridLayout):
+class Calendar30Days(Widget):
     randomImages = BooleanProperty(False)
     online = BooleanProperty(True)
     topBarSize = BoundedNumericProperty(0, min=0)
@@ -32,7 +33,6 @@ class Calendar30Days(GridLayout):
         # The size of each box in the grid
         self.Layout=GridLayout(pos=self.pos, size=self.size, rows=self.rows, cols=self.cols, spacing=self.spacing)
         self.gridSize = (self.size[0] / self.cols, self.size[1] / self.rows)
-        print(self.size,self.pos)
         for i in range(0, self.MonthStart):
             self.Layout.add_widget(AsyncImageButton(source=self.getImageSource(None), allow_stretch=True, keep_ratio=False,
                                              size=self.gridSize))  # If the month doesn't start on a Monday, you need empty days.
@@ -51,3 +51,5 @@ class Calendar30Days(GridLayout):
 
     def resize(self,*args):
         self.gridSize = (self.size[0] / self.cols, self.size[1] / self.rows)
+        self.Layout.size = self.size
+        self.Layout.pos = self.pos
