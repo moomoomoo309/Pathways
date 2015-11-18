@@ -10,8 +10,7 @@ from kivy.core.window import Window
 from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial, \
-    ObjectProperty
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
@@ -21,12 +20,9 @@ from kivy.uix.widget import Widget
 
 from Calendar import Calendar30Days
 
-# Length of each month
-Months = {"January": 31, "February": 28, "March": 31, "April": 30, "May": 31, "June": 30, "July": 31, "August": 31,
-          "September": 31, "October": 31, "November": 30, "December": 31}
 # Name of each month
-MonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
-              "November", "December"]
+MonthNames = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+              "November", "December")
 
 
 class TabView(Widget):
@@ -36,7 +32,8 @@ class TabView(Widget):
               "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
               "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
-              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})  # Replace these with pictures of your choice
+              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
+    # Replace these with pictures of your choice.
 
     screenNames = ListProperty(["1 Day", "3 Day", "Week", "Month"])
     # The name of all of the screens
@@ -60,13 +57,25 @@ class TabView(Widget):
     # Color of the thin bar below the tabs on the tab bar
     currentTab = BoundedNumericProperty(3, min=0)
     # The tab currently selected
-    screenList = ListProperty([])
-    # A list of the screens in the carousel.
-    CalWidget = ObjectProperty(None)
-    # The calendar widget object, so it can be referenced on resize.
 
     def __init__(self, **kwargs):
         super(TabView, self).__init__()  # I need this line for reasons.
+        # Set the properties above
+        self.screenNames = kwargs["screenNames"] if "screenNames" in kwargs else self.screenNames
+        self.randomImages = kwargs["randomImages"] if "randomImages" in kwargs else self.randomImages
+        self.online = kwargs["online"] if "online" in kwargs else self.online
+        self.topBarSize = kwargs["topBarSize"] if "topBarSize" in kwargs else self.topBarSize
+        self.tabSize = kwargs["tabSize"] if "tabSize" in kwargs else self.tabSize
+        self.tabMargin = kwargs["tabMargin"] if "tabMargin" in kwargs else self.tabMargin
+        self.numTabs = kwargs["numTabs"] if "numTabs" in kwargs else self.numTabs
+        self.floatBarRatio = kwargs["floatBarRatio"] if "floatBarRatio" in kwargs else self.floatBarRatio
+        self.tabBarColor = kwargs["tabBarColor"] if "tabBarColor" in kwargs else self.tabBarColor
+        self.floatBarColor = kwargs["floatBarColor"] if "floatBarColor" in kwargs else self.floatBarColor
+        self.currentTab = kwargs["currentTab"] if "currentTab" in kwargs else self.currentTab
+
+        self.screenList = []
+        # A list of the screens in the carousel.
+
         # Remove any images which don't exist or are online if online is false
         self.FloatBar = None
         # The float bar object
@@ -102,18 +111,18 @@ class TabView(Widget):
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=MonthNames[self.CurrentMonth])
         # Draw the top bar
-        self.CalWidget = self.CalWidget if self.CalWidget is not None else makeCalWidget(self)
-        # Use this for resizing
-        for i in range(3, -1, -1):
+        for i in range(self.numTabs - 1, -1, -1):
             testScreen = Screen(name=self.screenNames[i])
             testScreen.add_widget(Label(text="Test"))
+            testScreen.isDefault = True
             # You need a second screen for testing!
             self.screenList.append(testScreen)
             self.carousel.add_widget(testScreen)
         self.add_widget(self.carousel)
+        self.bind(size=self.resize)  # Resize children too!
 
     # Redraw the whole thing on resize
-    def resize(self):
+    def resize(self, width, height):
         self.topBarBackground.clear()
         self._drawTopBarBackground()
         for i in self.children:  # Reset the size of the all the widgets that make up the top bar
@@ -132,21 +141,18 @@ class TabView(Widget):
                 i.size = (self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize)
             elif isinstance(i, Screen):
                 for j in i.children:
-                    if isinstance(j,Calendar30Days):
-                        i.pos = (0,0)
+                    if isinstance(j, Calendar30Days):
+                        i.pos = (0, 0)
                         i.size = (self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize)
 
-    def _add_widget(self, widget, index = 0):
-        super(Carousel, self).add_widget(widget)
+    # Adds a widget to the tabview (Don't use add_widget!)
+    def add_screen(self, widget, index=0):  # Index is from right to left, not left to right!
+        if self.screenList[index].isDefault:
+            self.screenList[index].clear_widgets()
+            self.screenList[index].isDefault = False
+        self.screenList[index].add_widget(widget)
 
-    def add_widget(self, widget, index = 0):
-        if isinstance(widget, Screen):
-            if index == 0:
-                self.screenList[0].add_widget(widget)
-            else:
-                self.screenList[index].add_widget(widget)
-
-    # Switches the screen to the one pressed by the button without transition
+    # Switches the screen to the one pressed by the button
     def _switchCalScreen(self, *args):
         for i in self.screenList:
             if args[0].text[
@@ -171,7 +177,7 @@ class TabView(Widget):
     def _getTabButtonSize(self):
         return self.size[0] / self.numTabs, self.tabSize
 
-    def _drawTopBarBackground(self):
+    def _drawTopBarBackground(self):  # Draws the boxes behind the buttons and label
         self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
                                             size=(self.size[0], self.topBarSize)))  # Draw the top bar
         self.topBarBackground.add(Color(*self.tabBarColor))
@@ -181,7 +187,7 @@ class TabView(Widget):
 
         # Draw the top bar
 
-    def _drawGui(self, Month):
+    def _drawGui(self, Month):  # Draws the tab view (besides the boxes behind the buttons and label)
         self._drawTopBarBackground()
         self.canvas.before.add(self.topBarBackground)
         # Add text for tabs
@@ -208,7 +214,7 @@ class TabView(Widget):
         self.add_widget(self.FloatBar)
         # Add the float bar
 
-    def _getImageSource(self, blockedImage):
+    def _getImageSource(self, blockedImage):  # Changes the images on the empty days on click
         if self.randomImages and self.CurrentMonth in self.Images is not None and self.Images[
             self.CurrentMonth].__len__() > 0:
             img = self.Images[self.CurrentMonth][randint(0, self.Images[self.CurrentMonth].__len__() - 1)]
@@ -222,7 +228,7 @@ class TabView(Widget):
         return "CalendarInactive.png"
 
 
-class FloatCarousel(Carousel):
+class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate with the floatbar.
     def _prev_slide(self):
         slides = self.slides
         len_slides = len(slides)
@@ -256,7 +262,7 @@ class FloatCarousel(Carousel):
 
     next_slide = AliasProperty(_next_slide, None, bind=('slides', 'index'))
 
-    def on_touch_move(self, touch):
+    def on_touch_move(self, touch):  # All lines except the two specified are unchanged.
         if self._get_uid('cavoid') in touch.ud:
             return
         if self._touch is not touch:
@@ -328,34 +334,38 @@ class FloatCarousel(Carousel):
         anim.bind(on_complete=_cmp)
         anim.start(self)
         # Changed lines come after here.
-        if self.parent.overrideTab is None:
-            if new_offset > 0:
+        if self.parent.overrideTab is None:  # If the tabs didn't trigger the move
+            if new_offset > 0:  # Let the carousel do its thing!
                 self.parent.currentTab = self.parent.screenNames.index(
                     self.next_slide.name) if self.next_slide is not None else self.parent.currentTab
             elif new_offset < 0:
                 self.parent.currentTab = self.parent.screenNames.index(
                     self.previous_slide.name) if self.previous_slide is not None else self.parent.currentTab
+                # If new_offset is 0, the slide has not changed.
         else:
             self.parent.currentTab = self.parent.overrideTab
             self.parent.overrideTab = None
         self.parent._animateFloatBar(self.parent.currentTab, dur)
+        # Yeah, this is accessing a protected member of a parent class. It's supposed to.
 
 
-def resize(self, _, width, height):
-    self.size = (width, height)
-    self.resize()
+def resize(_, width, height, app):  # Resizes the whole tabview (which runs its resize method)
+    app.size = (width, height)
 
-def makeCalWidget(self):
+
+def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
                           MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
                           size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
                           online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
 
+
 class tabview(App):
     def build(self):
         app = TabView(size=(Window.width, Window.height),
-                      screenList=(Label(text="Test"), Label(text="Test"), Label(text="Test")))
-        app.add_widget(app)
+                      screenList=(Label(text="Test"), Label(text="Test"), Label(text="Test")), randomImages=True, online=False)
+        Window.bind(on_resize=partial(resize, app=app))
+        app.add_screen(makeCalWidget(app))
         return app
 
 
