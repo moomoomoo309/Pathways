@@ -113,7 +113,7 @@ class TabView(Widget):
         # Draw the top bar
         for i in range(self.numTabs - 1, -1, -1):
             testScreen = Screen(name=self.screenNames[i])
-            testScreen.add_widget(Label(text="Test"))
+            testScreen.add_widget(Label(text="Add a widget here with the add_screen method!"))
             testScreen.isDefault = True
             # You need a second screen for testing!
             self.screenList.append(testScreen)
@@ -362,8 +362,7 @@ def makeCalWidget(self):  # Initializes the Calendar grid
 
 class tabview(App):
     def build(self):
-        app = TabView(size=(Window.width, Window.height),
-                      screenList=(Label(text="Test"), Label(text="Test"), Label(text="Test")), randomImages=True, online=False)
+        app = TabView(size=(Window.width, Window.height), randomImages=True, online=False)
         Window.bind(on_resize=partial(resize, app=app))
         app.add_screen(makeCalWidget(app))
         return app
