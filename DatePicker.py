@@ -1,16 +1,13 @@
-from Canvas import Rectangle
-from kivy.graphics.context_instructions import Color
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.widget import Widget
-
-from kivy.app import App
-
 from datetime import date, timedelta
 
 from functools import partial
+from random import randrange
+from kivy.app import App
+
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.widget import Widget
 
 
 class DatePicker(BoxLayout):
@@ -63,7 +60,7 @@ class DatePicker(BoxLayout):
                 self.body.add_widget(Widget())
         while date_cursor.month == self.date.month:
             date_label = Button(text="[color=000000][size=36]"+str(date_cursor.day)+"[/color][/size]",
-                                markup=True,
+                                markup=True, background_color=[1, 1, 1, 1],
                                 background_down="Circle.png", background_normal="CalendarInactive.png")
             date_label.bind(on_press=partial(self.set_date, day=date_cursor.day, btn=date_label))
             if self.date.day == date_cursor.day:
@@ -71,9 +68,12 @@ class DatePicker(BoxLayout):
             self.body.add_widget(date_label)
             date_cursor += timedelta(days=1)
 
-    def set_date(self, *args, **kwargs):
+    def pressButton(self, *args, **kwargs):
         if "btn" in kwargs:
-            kwargs["btn"].background_color=[1,0,0,1]
+            kwargs["btn"].background_color = (randrange(0, 1), randrange(0, 1), randrange(0, 1), randrange(0, 1))
+        self.set_date(*args, **kwargs)
+
+    def set_date(self, *args, **kwargs):
         self.date = date(self.date.year, self.date.month, kwargs['day'])
         self.populate_body()
         self.populate_header()
