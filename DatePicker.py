@@ -64,7 +64,7 @@ class DatePicker(BoxLayout):
         while date_cursor.month == self.date.month:
             date_label = Button(text="[color=000000][size=36]"+str(date_cursor.day)+"[/color][/size]",
                                 markup=True,
-                                background_down="Circle2.png", background_normal="CalendarInactive.png")
+                                background_down="Circle.png", background_normal="CalendarInactive.png")
             date_label.bind(on_press=partial(self.set_date, day=date_cursor.day, btn=date_label))
             if self.date.day == date_cursor.day:
                 date_label.background_normal, date_label.background_down = date_label.background_down, date_label.background_normal
