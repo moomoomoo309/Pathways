@@ -35,7 +35,7 @@ class TabView(Widget):
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
     # Replace these with pictures of your choice.
 
-    screenNames = ListProperty(["1 Day", "3 Day", "Week", "Month"])
+    screenNames = ListProperty(["Schedule", "1 Day", "3 Day", "Week", "Month"])
     # The name of all of the screens
     randomImages = BooleanProperty(False)
     # Use random images to fill the empty days of the calendar
@@ -47,7 +47,7 @@ class TabView(Widget):
     # The size of the tabs vertically.
     tabMargin = BoundedNumericProperty(2, min=0)
     # The space between the top bar and the tab bar.
-    numTabs = BoundedNumericProperty(4, min=1)
+    numTabs = BoundedNumericProperty(5, min=1)
     # The number of tabs displayed at once
     floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
     # How much of the tab bar should be taken up by the float bar
@@ -55,7 +55,7 @@ class TabView(Widget):
     # Color of the tab bar
     floatBarColor = ListProperty([.75, 0, 0, 1])
     # Color of the thin bar below the tabs on the tab bar
-    currentTab = BoundedNumericProperty(3, min=0)
+    currentTab = BoundedNumericProperty(4, min=0)
     # The tab currently selected
 
     def __init__(self, **kwargs):
@@ -139,11 +139,6 @@ class TabView(Widget):
             elif isinstance(i, FloatCarousel):
                 i.pos = (0, 0)
                 i.size = (self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize)
-            elif isinstance(i, Screen):
-                for j in i.children:
-                    if isinstance(j, Calendar30Days):
-                        i.pos = (0, 0)
-                        i.size = (self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize)
 
     # Adds a widget to the tabview (Don't use add_widget!)
     def add_screen(self, widget, index=0):  # Index is from right to left, not left to right!
@@ -191,7 +186,7 @@ class TabView(Widget):
         self._drawTopBarBackground()
         self.canvas.before.add(self.topBarBackground)
         # Add text for tabs
-        for i in range(0, 4):
+        for i in range(0, self.numTabs):
             btn = Button(text_size=self._getTabButtonSize(), size=self._getTabButtonSize(),
                          text="[color=ffffff][size=24]" + self.screenNames[i] + "[/size][/color]",
                          background_color=(1, 1, 1, 0), pos=self._getTabButtonPos(i),
@@ -362,7 +357,7 @@ def makeCalWidget(self):  # Initializes the Calendar grid
 
 class tabview(App):
     def build(self):
-        app = TabView(size=(Window.width, Window.height), randomImages=True, online=False)
+        app = TabView(size=(Window.width, Window.height), randomImages=True, online=True)
         Window.bind(on_resize=partial(resize, app=app))
         app.add_screen(makeCalWidget(app))
         return app
