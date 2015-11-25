@@ -20,3 +20,9 @@ def callback(fct,*args,**kwargs):
     print(fct)
     print"args={}".format(args)
     print"kwargs={}".format(kwargs)
+
+class GPSRun(App):
+    def build(self):
+        loc=GPSLocation()
+        print(loc.speed)
+
