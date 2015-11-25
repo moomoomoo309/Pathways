@@ -1,7 +1,10 @@
+from Canvas import Rectangle
+from kivy.graphics.context_instructions import Color
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.widget import Widget
 
 from kivy.app import App
 
@@ -40,12 +43,13 @@ class DatePicker(BoxLayout):
 
     def populate_header(self, *args, **kwargs):
         self.header.clear_widgets()
-        previous_month = Button(text="<")
-        previous_month.bind(on_press=partial(self.move_previous_month))
-        next_month = Button(text=">", on_press=self.move_next_month)
-#        next_month.bind(on_press=partial(self.move_next_month))
+        previous_month = Button(text="[color=000000][size=36]<[/color][/size]", on_press=partial(self.move_previous_month),
+                            background_down="CalendarActive.png", background_normal="CalendarActive.png", markup=True)
+        next_month = Button(text="[color=000000][size=36]>[/color][/size]", on_press=self.move_next_month,
+                            background_down="CalendarActive.png", background_normal="CalendarActive.png", markup=True)
         month_year_text = self.month_names[self.date.month - 1] + ' ' + str(self.date.year)
-        current_month = Label(text=month_year_text, size_hint=(2, 1))
+        current_month = Button(text="[color=000000][size=36]"+month_year_text+"[/color][/size]", size_hint=(2, 1),
+                              markup=True, background_down="CalendarActive.png", background_normal="CalendarActive.png")
 
         self.header.add_widget(previous_month)
         self.header.add_widget(current_month)
@@ -56,11 +60,11 @@ class DatePicker(BoxLayout):
         date_cursor = date(self.date.year, self.date.month, 1)
         if date_cursor.isoweekday()!=7:
             for filler in range(date_cursor.isoweekday()):
-                self.body.add_widget(Label(text=""))
+                self.body.add_widget(Widget())
         while date_cursor.month == self.date.month:
-            date_label = Button(text=str(date_cursor.day))
-            date_label.bind(on_press=partial(self.set_date,
-                                             day=date_cursor.day))
+            date_label = Button(text="[color=000000][size=36]"+str(date_cursor.day)+"[/color][/size]",
+                                on_press=partial(self.set_date, day=date_cursor.day), markup=True,
+                                background_down="CalendarActive.png", background_normal="CalendarInactive.png")
             if self.date.day == date_cursor.day:
                 date_label.background_normal, date_label.background_down = date_label.background_down, date_label.background_normal
             self.body.add_widget(date_label)
