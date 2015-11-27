@@ -1,18 +1,37 @@
 from datetime import date, timedelta
-
 from functools import partial
-from random import randrange
-from kivy.app import App
+from random import randint
 
+from kivy.app import App
+from kivy.core.window import Window
+from kivy.graphics import Canvas, Rectangle, Color
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.widget import Widget
 
+PrimaryColors = (
+    (0.957, 0.263, 0.212, 1),
+    (0.914, 0.118, 0.388, 1),
+    (0.612, 0.153, 0.69, 1),
+    (0.404, 0.227, 0.718, 1),
+    (0.247, 0.318, 0.71, 1),
+    (0.129, 0.588, 0.953, 1),
+    (0.012, 0.663, 0.957, 1),
+    (0, 0.737, 0.831, 1),
+    (0, 0.588, 0.533, 1),
+    (0.298, 0.686, 0.314, 1),
+    (0.545, 0.765, 0.29, 1),
+    (0.804, 0.863, 0.224, 1),
+    (1, 0.922, 0.231, 1),
+    (1, 0.757, 0.027, 1),
+    (1, 0.596, 0, 1),
+)
 
 class DatePicker(BoxLayout):
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__(**kwargs)
+        self.SelectedColor = PrimaryColors[randint(0, len(PrimaryColors) - 1)]
         self.date = date.today()
         self.orientation = "vertical"
         self.month_names = ('January',
@@ -60,18 +79,13 @@ class DatePicker(BoxLayout):
                 self.body.add_widget(Widget())
         while date_cursor.month == self.date.month:
             date_label = Button(text="[color=000000][size=36]"+str(date_cursor.day)+"[/color][/size]",
-                                markup=True, background_color=[1, 1, 1, 1],
-                                background_down="Circle.png", background_normal="CalendarInactive.png")
-            date_label.bind(on_press=partial(self.set_date, day=date_cursor.day, btn=date_label))
+                                markup=True, background_down="Circle2.png", background_normal="CalendarInactive.png",
+                                on_press=partial(self.set_date, day=date_cursor.day))
             if self.date.day == date_cursor.day:
                 date_label.background_normal, date_label.background_down = date_label.background_down, date_label.background_normal
+                date_label.background_color = self.SelectedColor
             self.body.add_widget(date_label)
             date_cursor += timedelta(days=1)
-
-    def pressButton(self, *args, **kwargs):
-        if "btn" in kwargs:
-            kwargs["btn"].background_color = (randrange(0, 1), randrange(0, 1), randrange(0, 1), randrange(0, 1))
-        self.set_date(*args, **kwargs)
 
     def set_date(self, *args, **kwargs):
         self.date = date(self.date.year, self.date.month, kwargs['day'])
@@ -95,9 +109,20 @@ class DatePicker(BoxLayout):
         self.populate_body()
 
 
+class DatePickerWidget(Widget):
+    def __init__(self, **kwargs):
+        self.size = kwargs["size"] if "size" in kwargs else (100, 100)
+        self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
+        self.canvas = Canvas()
+        self.canvas.before.clear()
+        self.canvas.before.add(Color(1, 1, 1, 1))
+        self.canvas.before.add(Rectangle(pos=(0, 0), size=(Window.width, Window.height)))
+        self.add_widget(DatePicker(size=self.size, pos=self.pos))
+
+
 class MyApp(App):
     def build(self):
-        return DatePicker()
+        return DatePickerWidget(size=Window.size)
 
 
 if __name__ == '__main__':
