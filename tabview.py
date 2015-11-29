@@ -2,25 +2,37 @@ import calendar
 from datetime import date, datetime
 from os.path import isfile
 from random import randint
-
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
+from kivy.uix.dropdown import DropDown
+
+from kivy.graphics.instructions import InstructionGroup
+
+from kivy.graphics.vertex_instructions import Rectangle
+
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 
 from Calendar import Calendar30Days
+from DatePicker import DatePickerWidget
+
+
+
+
+
+
+
 
 # Name of each month
+
 MonthNames = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
               "November", "December")
 
@@ -112,7 +124,8 @@ class TabView(Widget):
         self._drawGui(Month=MonthNames[self.CurrentMonth])
         # Draw the top bar
         for i in range(self.numTabs - 1, -1, -1):
-            testScreen = Screen(name=self.screenNames[i])
+            testScreen = Screen(name=self.screenNames[i],
+                                size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin))
             testScreen.add_widget(Label(text="Add a widget here with the add_screen method!"))
             testScreen.isDefault = True
             # You need a second screen for testing!
@@ -130,12 +143,12 @@ class TabView(Widget):
                 i.size = [self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio]
                 i.pos = [self.currentTab * self.size[0] / self.numTabs,
                          self.size[1] - self.topBarSize - self.tabSize - self.tabMargin]
+            elif i == self.MonthButton:
+                i.pos = (-1, self.size[1] - self.topBarSize)
+                i.size = (self.size[0], self.topBarSize)
             elif isinstance(i, Button):
                 i.pos = (self._getTabButtonPos(i.i))
                 i.size = (self._getTabButtonSize())
-            elif isinstance(i, Label):
-                i.pos = (-1, self.size[1] - self.topBarSize)
-                i.size = (self.size[0], self.topBarSize)
             elif isinstance(i, FloatCarousel):
                 i.pos = (0, 0)
                 i.size = (self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize)
@@ -145,6 +158,7 @@ class TabView(Widget):
         if self.screenList[index].isDefault:
             self.screenList[index].clear_widgets()
             self.screenList[index].isDefault = False
+        widget.size = self.screenList[index].size
         self.screenList[index].add_widget(widget)
 
     # Switches the screen to the one pressed by the button
@@ -193,13 +207,18 @@ class TabView(Widget):
                          markup=True, halign="center", valign="middle", on_press=self._switchCalScreen)
             btn.i = i
             self.add_widget(btn)
-
-        self.add_widget(Label(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
-                              text="[color=000000][size=36]" + Month + "[/color][/size]",
-                              pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
-                              valign="middle"))
+        self.dropDown = DropDown()
+        self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
+                                  text="[color=000000][size=36]" + Month + "[/color][/size]",
+                                  pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
+                                  valign="middle", on_release=self.dropDown.open,
+                                  background_normal="", background_down="")
+        self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.height / 2, Window.height * 2 / 3))
+        self.dropDown.add_widget(self.datePicker)
+        self.add_widget(self.MonthButton)
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
+        self.add_widget(self.dropDown)
         self.FloatBar = AsyncImage(source="FloatBar.png",
                                    size=(self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio),
                                    pos=(self.currentTab * self.size[0] / self.numTabs,

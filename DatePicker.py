@@ -1,3 +1,4 @@
+import calendar
 from datetime import date, timedelta
 from functools import partial
 from random import randint
@@ -38,8 +39,9 @@ def shouldUseWhiteText(color):
 class DatePicker(BoxLayout):
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__(**kwargs)
-        self.isSelected = True
+        self.bind(size=self.resize)
         self.SelectedColor = PrimaryColors[randint(0, len(PrimaryColors) - 1)]
+        self.SelectedDate = date.today()
         self.date = date.today()
         self.orientation = "vertical"
         self.month_names = ('January',
@@ -62,6 +64,12 @@ class DatePicker(BoxLayout):
         self.add_widget(self.header)
         self.add_widget(self.body)
 
+        self.populate_body()
+        self.populate_header()
+
+    def resize(self, _, size):
+        self.header.size = (size[0], size[1] * .2)
+        self.body.size = (size[0], size[1] * .8)
         self.populate_body()
         self.populate_header()
 
@@ -97,10 +105,18 @@ class DatePicker(BoxLayout):
             for filler in range(date_cursor.isoweekday()):
                 self.body.add_widget(Widget())
         while date_cursor.month == self.date.month:
+
             date_label = Button(text="[color=000000][size=36]" + str(date_cursor.day) + "[/color][/size]",
-                                markup=True, background_down="Circle2.png", background_normal="CalendarInactive.png",
-                                on_press=partial(self.set_date, day=date_cursor.day))
-            if self.isSelected and self.date.day == date_cursor.day:
+                                markup=True, background_down="Circle3.png", allow_stretch=True, keep_ratio=False,
+                                on_press=partial(self.set_date, day=date_cursor.day, fromPress=True),
+                                background_color=(0, 0, 0, 0), halign="center", valign="middle")
+            date_label.size = (self.body.size[0] / self.body.cols,
+                               self.body.size[0] / (6 if calendar.monthrange(self.date.year,
+                                                                             self.date.month)[1] +
+                                                         date_cursor.isoweekday() % 7 >= 35 else 5))
+            date_label.text_size = date_label.size
+
+            if self.SelectedDate == date_cursor:
                 if shouldUseWhiteText(self.SelectedColor):
                     date_label.text = "[color=ffffff]" + date_label.text[14:]
                 date_label.background_normal, date_label.background_down = date_label.background_down, date_label.background_normal
@@ -109,8 +125,9 @@ class DatePicker(BoxLayout):
             date_cursor += timedelta(days=1)
 
     def set_date(self, *args, **kwargs):
-        self.isSelected = True
         self.date = date(self.date.year, self.date.month, kwargs['day'])
+        if "fromPress" in kwargs and kwargs["fromPress"]:
+            self.SelectedDate = self.date
         self.populate_body()
         self.populate_header()
 
@@ -119,7 +136,6 @@ class DatePicker(BoxLayout):
             self.date = date(self.date.year + 1, 1, self.date.day)
         else:
             self.date = date(self.date.year, self.date.month + 1, 1)
-            self.isSelected = False
         self.populate_header()
         self.populate_body()
 
@@ -135,18 +151,32 @@ class DatePicker(BoxLayout):
 class DatePickerWidget(Widget):
     def __init__(self, **kwargs):
         super(DatePickerWidget, self).__init__(**kwargs)
+        self.bind(size=self.resize)
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
-        self.canvas = Canvas()
-        self.canvas.before.clear()
-        self.canvas.before.add(Color(1, 1, 1, 1))
-        self.canvas.before.add(Rectangle(pos=(0, 0), size=(Window.width, Window.height)))
+        self.resize(*self.size)
         self.add_widget(DatePicker(size=self.size, pos=self.pos))
+
+    def resize(self, width, height):
+        self.drawBackground()
+        if len(self.children) > 0:
+            self.children[0].size = self.size
+
+    def drawBackground(self):
+        self.canvas = self.canvas if self.canvas is not None else Canvas()
+        self.canvas.before.clear()
+        self.canvas.before.add(Color(0, 0, 0, 1))
+        self.canvas.before.add(Rectangle(pos=self.pos, size=self.size))
+        self.canvas.before.add(Color(1, 1, 1, 1))
+        self.canvas.before.add(
+            Rectangle(pos=(self.pos[0], self.pos[1] + 1), size=(self.size[0], self.size[1] - 2)))
 
 
 class MyApp(App):
     def build(self):
-        return DatePickerWidget(size=Window.size)
+        widget = DatePickerWidget(size=Window.size)
+        Window.bind(on_resize=lambda inst, width, height: setattr(widget, "size", inst.size))
+        return widget
 
 
 if __name__ == '__main__':
