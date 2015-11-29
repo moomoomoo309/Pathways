@@ -1,7 +1,6 @@
 from datetime import date, timedelta
 from functools import partial
 from random import randint
-
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.graphics import Canvas, Rectangle, Color
@@ -10,6 +9,7 @@ from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.widget import Widget
 
+# A sample of colors from https://www.google.com/design/spec/style/color.html
 PrimaryColors = (
     (0.957, 0.263, 0.212, 1),
     (0.914, 0.118, 0.388, 1),
@@ -28,9 +28,17 @@ PrimaryColors = (
     (1, 0.596, 0, 1),
 )
 
+
+# From http://stackoverflow.com/questions/3942878/
+def shouldUseWhiteText(color):
+    fct = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    return 0.2126 * fct(color[0]) + 0.7152 * fct(color[1]) + 0.0722 * fct(color[2]) < 0.179
+
+
 class DatePicker(BoxLayout):
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__(**kwargs)
+        self.isSelected = True
         self.SelectedColor = PrimaryColors[randint(0, len(PrimaryColors) - 1)]
         self.date = date.today()
         self.orientation = "vertical"
@@ -59,13 +67,24 @@ class DatePicker(BoxLayout):
 
     def populate_header(self, *args, **kwargs):
         self.header.clear_widgets()
-        previous_month = Button(text="[color=000000][size=36]<[/color][/size]", on_press=partial(self.move_previous_month),
-                            background_down="CalendarActive.png", background_normal="CalendarActive.png", markup=True)
-        next_month = Button(text="[color=000000][size=36]>[/color][/size]", on_press=self.move_next_month,
-                            background_down="CalendarActive.png", background_normal="CalendarActive.png", markup=True)
+        previous_month = Button(text="[color=000000][size=36]<[/color][/size]" if not shouldUseWhiteText(
+            self.SelectedColor) else "[color=ffffff][size=36]<[/color][/size]",
+                                on_press=partial(self.move_previous_month),
+                                background_down="", background_normal="", background_color=self.SelectedColor,
+                                markup=True)
+
+        next_month = Button(text="[color=000000][size=36]>[/color][/size]" if not shouldUseWhiteText(
+            self.SelectedColor) else "[color=ffffff][size=36]>[/color][/size]", on_press=self.move_next_month,
+                            background_down="", background_normal="", background_color=self.SelectedColor, markup=True)
+
         month_year_text = self.month_names[self.date.month - 1] + ' ' + str(self.date.year)
-        current_month = Button(text="[color=000000][size=36]"+month_year_text+"[/color][/size]", size_hint=(2, 1),
-                              markup=True, background_down="CalendarActive.png", background_normal="CalendarActive.png")
+
+        current_month = Button(
+            text="[color=000000][size=36]" + month_year_text + "[/color][/size]" if not shouldUseWhiteText(
+                self.SelectedColor) else "[color=ffffff][size=36]" + month_year_text + "[/color][/size]",
+            size_hint=(2, 1),
+            markup=True, background_down="", background_normal="",
+            background_color=self.SelectedColor)
 
         self.header.add_widget(previous_month)
         self.header.add_widget(current_month)
@@ -74,20 +93,23 @@ class DatePicker(BoxLayout):
     def populate_body(self, *args, **kwargs):
         self.body.clear_widgets()
         date_cursor = date(self.date.year, self.date.month, 1)
-        if date_cursor.isoweekday()!=7:
+        if date_cursor.isoweekday() != 7:
             for filler in range(date_cursor.isoweekday()):
                 self.body.add_widget(Widget())
         while date_cursor.month == self.date.month:
-            date_label = Button(text="[color=000000][size=36]"+str(date_cursor.day)+"[/color][/size]",
+            date_label = Button(text="[color=000000][size=36]" + str(date_cursor.day) + "[/color][/size]",
                                 markup=True, background_down="Circle2.png", background_normal="CalendarInactive.png",
                                 on_press=partial(self.set_date, day=date_cursor.day))
-            if self.date.day == date_cursor.day:
+            if self.isSelected and self.date.day == date_cursor.day:
+                if shouldUseWhiteText(self.SelectedColor):
+                    date_label.text = "[color=ffffff]" + date_label.text[14:]
                 date_label.background_normal, date_label.background_down = date_label.background_down, date_label.background_normal
                 date_label.background_color = self.SelectedColor
             self.body.add_widget(date_label)
             date_cursor += timedelta(days=1)
 
     def set_date(self, *args, **kwargs):
+        self.isSelected = True
         self.date = date(self.date.year, self.date.month, kwargs['day'])
         self.populate_body()
         self.populate_header()
@@ -97,6 +119,7 @@ class DatePicker(BoxLayout):
             self.date = date(self.date.year + 1, 1, self.date.day)
         else:
             self.date = date(self.date.year, self.date.month + 1, 1)
+            self.isSelected = False
         self.populate_header()
         self.populate_body()
 
@@ -111,6 +134,7 @@ class DatePicker(BoxLayout):
 
 class DatePickerWidget(Widget):
     def __init__(self, **kwargs):
+        super(DatePickerWidget, self).__init__(**kwargs)
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
         self.canvas = Canvas()
