@@ -31,6 +31,10 @@ from DatePicker import DatePickerWidget
 
 
 
+
+
+
+
 # Name of each month
 
 MonthNames = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
@@ -101,6 +105,7 @@ class TabView(Widget):
         # Forces the tab to be used to be this one.
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
+        # Draw black background
         for i in self.Images:
             if isinstance(i, (int, long)):
                 j = 0
@@ -133,6 +138,9 @@ class TabView(Widget):
             self.carousel.add_widget(testScreen)
         self.add_widget(self.carousel)
         self.bind(size=self.resize)  # Resize children too!
+        for i in self.children:
+            if isinstance(i, Button) and hasattr(i, "i") and i.i == self.currentTab:
+                self._switchCalScreen(i)
 
     # Redraw the whole thing on resize
     def resize(self, width, height):
@@ -146,6 +154,8 @@ class TabView(Widget):
             elif i == self.MonthButton:
                 i.pos = (-1, self.size[1] - self.topBarSize)
                 i.size = (self.size[0], self.topBarSize)
+            elif i == self.dropDown:
+                i.size = (Window.height / 2, Window.height * 2 / 3)
             elif isinstance(i, Button):
                 i.pos = (self._getTabButtonPos(i.i))
                 i.size = (self._getTabButtonSize())
@@ -187,18 +197,21 @@ class TabView(Widget):
         return self.size[0] / self.numTabs, self.tabSize
 
     def _drawTopBarBackground(self):  # Draws the boxes behind the buttons and label
+        self.topBarBackground.add(Color(0, 0, 0))
+        self.topBarBackground.add(Rectangle(pos=self.pos, size=self.size))
         self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
                                             size=(self.size[0], self.topBarSize)))  # Draw the top bar
         self.topBarBackground.add(Color(*self.tabBarColor))
         self.topBarBackground.add(Rectangle(pos=(0, self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
                                             size=(self.size[0], self.tabSize)))  # Draw the tabs bar
-        self.topBarBackground.add(Color(1, 1, 1))
+        self.topBarBackground.add(Color(0, 0, 0))
 
         # Draw the top bar
 
     def _drawGui(self, Month):  # Draws the tab view (besides the boxes behind the buttons and label)
         self._drawTopBarBackground()
-        self.canvas.before.add(self.topBarBackground)
+        self.canvas.add(self.topBarBackground)
+        # Draw top bar
         # Add text for tabs
         for i in range(0, self.numTabs):
             btn = Button(text_size=self._getTabButtonSize(), size=self._getTabButtonSize(),
@@ -208,13 +221,18 @@ class TabView(Widget):
             btn.i = i
             self.add_widget(btn)
         self.dropDown = DropDown()
+
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
                                   text="[color=000000][size=36]" + Month + "[/color][/size]",
                                   pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
                                   valign="middle", on_release=self.dropDown.open,
                                   background_normal="", background_down="")
-        self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.height / 2, Window.height * 2 / 3))
+        self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.height / 2, Window.height * 2 / 3),
+                                           hidden=True)
         self.dropDown.add_widget(self.datePicker)
+        self.dropDown.bind(size=partial(genericResize, objs=(self.datePicker, self.datePicker.parent),
+                                        fct=lambda: (Window.height / 2, Window.height * 2 / 3)))
+
         self.add_widget(self.MonthButton)
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
@@ -363,8 +381,12 @@ class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate 
         # Yeah, this is accessing a protected member of a parent class. It's supposed to.
 
 
-def resize(_, width, height, app):  # Resizes the whole tabview (which runs its resize method)
-    app.size = (width, height)
+def genericResize(*args, **kwargs):  # Resizes the whole tabview (which runs its resize method)
+    if isinstance(kwargs["objs"], (list, tuple)):
+        for i in kwargs["objs"]:
+            i.size = kwargs["fct"]()
+    else:
+        kwargs["objs"].size = kwargs["fct"]()
 
 
 def makeCalWidget(self):  # Initializes the Calendar grid
@@ -377,7 +399,7 @@ def makeCalWidget(self):  # Initializes the Calendar grid
 class tabview(App):
     def build(self):
         app = TabView(size=(Window.width, Window.height), randomImages=True, online=True)
-        Window.bind(on_resize=partial(resize, app=app))
+        Window.bind(on_resize=partial(genericResize, objs=app, fct=lambda: Window.size))
         app.add_screen(makeCalWidget(app))
         return app
 
