@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from functools import partial
 from random import randint
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Canvas, Rectangle, Color
 from kivy.uix.boxlayout import BoxLayout
@@ -42,6 +43,7 @@ class DatePicker(BoxLayout):
         self.bind(size=self.resize)
         self.SelectedColor = PrimaryColors[randint(0, len(PrimaryColors) - 1)]
         self.SelectedDate = date.today()
+        self.bind(SelectedDate=lambda inst, newDate: setattr(inst.parent, "SelectedDate", newDate))
         self.date = date.today()
         self.orientation = "vertical"
         self.month_names = ('January',
@@ -108,8 +110,8 @@ class DatePicker(BoxLayout):
 
             date_label = Button(text="[color=000000][size=36]" + str(date_cursor.day) + "[/color][/size]",
                                 markup=True, background_down="Circle2.png", allow_stretch=True, keep_ratio=False,
-                                on_press=partial(self.set_date, day=date_cursor.day, fromPress=True),
                                 background_color=(0, 0, 0, 0), halign="center", valign="middle")
+            date_label.on_press = partial(self.set_date, day=date_cursor.day, fromPress=True, btn=date_label)
             date_label.bind(size=lambda inst, x: setattr(inst, "text_size", inst.size))
             date_label.size = (self.body.size[0] / self.body.cols,
                                self.body.size[0] / (6 if calendar.monthrange(self.date.year,
@@ -125,6 +127,12 @@ class DatePicker(BoxLayout):
             date_cursor += timedelta(days=1)
 
     def set_date(self, *args, **kwargs):
+        print("btn" in kwargs, self.SelectedDate.month == self.date.month, self.SelectedDate.year == self.date.year,
+              int(kwargs["btn"].text[23:kwargs["btn"].text[23:].find("[") + 23]) == self.SelectedDate.day)
+        if "btn" in kwargs and self.SelectedDate.month == self.date.month and self.SelectedDate.year == self.date.year \
+                and int(kwargs["btn"].text[23:kwargs["btn"].text[23:].find("[") + 23]) == self.SelectedDate.day:
+            Clock.schedule_once(self.dismiss)
+            print"Hi"
         self.date = date(self.date.year, self.date.month, kwargs['day'])
         if "fromPress" in kwargs and kwargs["fromPress"]:
             self.SelectedDate = self.date
@@ -147,6 +155,9 @@ class DatePicker(BoxLayout):
         self.populate_header()
         self.populate_body()
 
+    def dismiss(self):
+        pass
+
 
 class DatePickerWidget(Widget):
     def __init__(self, **kwargs):
@@ -154,9 +165,16 @@ class DatePickerWidget(Widget):
         self.bind(size=self.resize)
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
+        self.dismiss = kwargs["dismiss"] if "dismiss" in kwargs else self.dismiss
         self.resize(*self.size)
         self.add_widget(DatePicker())
         self.drawBackground()
+        self.SelectedDate = self.children[0].SelectedDate
+        self.bind(on_dismiss=lambda inst, x: setattr(inst.children[0], "dismiss", x),
+                  SelectedDate=lambda inst, x: setattr(inst.children[0], "SelectedDate", x))
+
+    def dismiss(self):  # Overwrite this with your own function so that it will dismiss on double clicking a date.
+        pass
 
     def resize(self, width, height):
         self.drawBackground()
@@ -164,7 +182,6 @@ class DatePickerWidget(Widget):
             self.children[0].size = self.size
 
     def drawBackground(self):
-        print(min(*self.size))
         if min(*self.size) > 0:
             self.canvas = self.canvas if self.canvas is not None else Canvas()
             self.canvas.before.clear()
