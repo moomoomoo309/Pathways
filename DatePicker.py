@@ -107,14 +107,14 @@ class DatePicker(BoxLayout):
         while date_cursor.month == self.date.month:
 
             date_label = Button(text="[color=000000][size=36]" + str(date_cursor.day) + "[/color][/size]",
-                                markup=True, background_down="Circle3.png", allow_stretch=True, keep_ratio=False,
+                                markup=True, background_down="Circle2.png", allow_stretch=True, keep_ratio=False,
                                 on_press=partial(self.set_date, day=date_cursor.day, fromPress=True),
                                 background_color=(0, 0, 0, 0), halign="center", valign="middle")
+            date_label.bind(size=lambda inst, x: setattr(inst, "text_size", inst.size))
             date_label.size = (self.body.size[0] / self.body.cols,
                                self.body.size[0] / (6 if calendar.monthrange(self.date.year,
                                                                              self.date.month)[1] +
                                                          date_cursor.isoweekday() % 7 >= 35 else 5))
-            date_label.text_size = date_label.size
 
             if self.SelectedDate == date_cursor:
                 if shouldUseWhiteText(self.SelectedColor):
@@ -155,7 +155,8 @@ class DatePickerWidget(Widget):
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
         self.resize(*self.size)
-        self.add_widget(DatePicker(size=self.size, pos=self.pos))
+        self.add_widget(DatePicker())
+        self.drawBackground()
 
     def resize(self, width, height):
         self.drawBackground()
@@ -163,13 +164,14 @@ class DatePickerWidget(Widget):
             self.children[0].size = self.size
 
     def drawBackground(self):
-        self.canvas = self.canvas if self.canvas is not None else Canvas()
-        self.canvas.before.clear()
-        self.canvas.before.add(Color(0, 0, 0, 1))
-        self.canvas.before.add(Rectangle(pos=self.pos, size=self.size))
-        self.canvas.before.add(Color(1, 1, 1, 1))
-        self.canvas.before.add(
-            Rectangle(pos=(self.pos[0], self.pos[1] + 1), size=(self.size[0], self.size[1] - 2)))
+        print(min(*self.size))
+        if min(*self.size) > 0:
+            self.canvas = self.canvas if self.canvas is not None else Canvas()
+            self.canvas.before.clear()
+            self.canvas.before.add(Color(0, 0, 0, 1))
+            self.canvas.before.add(Rectangle(pos=self.pos, size=self.size))
+            self.canvas.before.add(Color(1, 1, 1, 1))
+            self.canvas.before.add(Rectangle(pos=(self.pos[0], self.pos[1] + 1), size=(self.size[0], self.size[1] - 2)))
 
 
 class MyApp(App):
