@@ -227,16 +227,17 @@ class TabView(Widget):
                                   pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
                                   valign="middle", on_release=self.dropDown.open,
                                   background_normal="", background_down="")
-        self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.height / 2, Window.height * 2 / 3),
-                                           hidden=True)
+        self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.height / 2, Window.height * 2 / 3))
         self.dropDown.add_widget(self.datePicker)
+        self.dropDown.pos=(0,9001)
         self.dropDown.bind(size=partial(genericResize, objs=(self.datePicker, self.datePicker.parent),
                                         fct=lambda: (Window.height / 2, Window.height * 2 / 3)))
 
         self.add_widget(self.MonthButton)
+        self.add_widget(self.dropDown)
+
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
-        self.add_widget(self.dropDown)
         self.FloatBar = AsyncImage(source="FloatBar.png",
                                    size=(self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio),
                                    pos=(self.currentTab * self.size[0] / self.numTabs,
@@ -398,7 +399,7 @@ def makeCalWidget(self):  # Initializes the Calendar grid
 
 class tabview(App):
     def build(self):
-        app = TabView(size=(Window.width, Window.height), randomImages=True, online=True)
+        app = TabView(size=(Window.width, Window.height), randomImages=True, online=False)
         Window.bind(on_resize=partial(genericResize, objs=app, fct=lambda: Window.size))
         app.add_screen(makeCalWidget(app))
         return app
