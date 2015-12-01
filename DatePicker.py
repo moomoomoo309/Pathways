@@ -2,8 +2,8 @@ import calendar
 from datetime import date, timedelta
 from functools import partial
 from random import randint
+
 from kivy.app import App
-from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Canvas, Rectangle, Color
 from kivy.uix.boxlayout import BoxLayout
@@ -158,19 +158,20 @@ class DatePickerWidget(Widget):
     def __init__(self, **kwargs):
         super(DatePickerWidget, self).__init__(**kwargs)
         self.bind(size=self.resize)
-        self.dismiss = None
+        self.bind(on_dismiss=lambda inst, x: setattr(inst.children[0], "dismiss", inst.dismiss),
+                  pos=self.resize)
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
         self.dismiss = kwargs["dismiss"] if "dismiss" in kwargs else self.dismiss
         self.resize(*self.size)
-        self.add_widget(DatePicker())
+        self.add_widget(DatePicker(size=self.size, pos=self.pos))
         self.drawBackground()
         self.SelectedDate = self.children[0].SelectedDate
-        self.bind(on_dismiss=lambda inst, x: setattr(inst.children[0], "dismiss", inst.dismiss))
 
     def resize(self, width, height):
         self.drawBackground()
         if len(self.children) > 0:
+            self.children[0].pos = self.pos
             self.children[0].size = self.size
 
     def drawBackground(self):
@@ -180,8 +181,11 @@ class DatePickerWidget(Widget):
             self.canvas.before.add(Color(0, 0, 0, 1))
             self.canvas.before.add(Rectangle(pos=self.pos, size=self.size))
             self.canvas.before.add(Color(1, 1, 1, 1))
-            self.canvas.before.add(Rectangle(pos=(self.pos[0], self.pos[1] + 1), size=(self.size[0], self.size[1] - 2)))
+            self.canvas.before.add(
+                Rectangle(pos=(self.pos[0] + 1, self.pos[1] + 1), size=(self.size[0] - 2, self.size[1] - 2)))
 
+    def dismiss(self):
+        pass
 
 class MyApp(App):
     def build(self):

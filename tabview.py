@@ -2,38 +2,25 @@ import calendar
 from datetime import date, datetime
 from os.path import isfile
 from random import randint
+
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
+from kivy.uix.dropdown import DropDown
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
-from kivy.uix.dropdown import DropDown
-
-from kivy.graphics.instructions import InstructionGroup
-
-from kivy.graphics.vertex_instructions import Rectangle
-
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 
 from Calendar import Calendar30Days
 from DatePicker import DatePickerWidget
-
-
-
-
-
-
-
-
-
-
-
 
 # Name of each month
 
@@ -72,6 +59,7 @@ class TabView(Widget):
     floatBarColor = ListProperty([.75, 0, 0, 1])
     # Color of the thin bar below the tabs on the tab bar
     currentTab = BoundedNumericProperty(4, min=0)
+
     # The tab currently selected
 
     def __init__(self, **kwargs):
@@ -225,16 +213,10 @@ class TabView(Widget):
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
                                   text="[color=000000][size=36]" + Month + "[/color][/size]",
                                   pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
-                                  valign="middle", on_release=lambda self: setattr(self.parent.datePicker, "pos", (0,0)),
-                                  background_normal="", background_down="")
-        self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.width / 2, Window.height * 2 / 3), pos=(Window.width/4 ,9001))
-        print(self.datePicker.size, self.datePicker.pos)
-        self.datePicker.dismiss = partial(self.changeDate, date=self.datePicker.children[0].SelectedDate)
-        self.datePicker.bind(size=partial(genericResize, objs=self.datePicker,
-                                        fct=lambda: (Window.height / 2, Window.height * 2 / 3)))
+                                  valign="middle", on_press=showDate, background_normal="CalendarInactive.png",
+                                  background_down="CalendarInactive.png")
 
         self.add_widget(self.MonthButton)
-        self.add_widget(self.datePicker)
 
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
@@ -249,7 +231,7 @@ class TabView(Widget):
 
     def _getImageSource(self, blockedImage):  # Changes the images on the empty days on click
         if self.randomImages and self.CurrentMonth in self.Images is not None and self.Images[
-        self.CurrentMonth].__len__() > 0:
+            self.CurrentMonth].__len__() > 0:
             img = self.Images[self.CurrentMonth][randint(0, self.Images[self.CurrentMonth].__len__() - 1)]
             if self.Images[self.CurrentMonth].__len__() > 1 and blockedImage is not None:
                 while img == blockedImage:
@@ -261,8 +243,17 @@ class TabView(Widget):
         return "CalendarInactive.png"
 
     def changeDate(self, date):
-        self.dropDown.dismiss(self.MonthButton)
+        self.remove_widget(self.datePicker)
         # TODO: Actually change the date here
+
+
+def showDate(self):
+    parent = self.parent
+    parent.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.width * 2 / 3, Window.height * 2 / 3),
+                                         pos=(Window.width / 6,
+                                              Window.height / 3 - parent.topBarSize - parent.tabSize - parent.tabMargin))
+    parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.children[0].SelectedDate)
+    parent.add_widget(parent.datePicker)
 
 
 class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate with the floatbar.
