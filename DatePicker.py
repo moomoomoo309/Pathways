@@ -41,9 +41,11 @@ class DatePicker(BoxLayout):
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__(**kwargs)
         self.bind(size=self.resize)
+        self.wdg = kwargs["wdg"] if "wdg" in kwargs else None
         self.SelectedColor = PrimaryColors[randint(0, len(PrimaryColors) - 1)]
         self.SelectedDate = date.today()
-        self.bind(SelectedDate=lambda inst, newDate: setattr(inst.parent, "SelectedDate", newDate))
+        self.dismiss = self.wdg.dismiss
+#        self.bind(SelectedDate=lambda inst, newDate: setattr(inst.parent, "SelectedDate", newDate))
         self.date = date.today()
         self.orientation = "vertical"
         self.month_names = ('January',
@@ -127,12 +129,10 @@ class DatePicker(BoxLayout):
             date_cursor += timedelta(days=1)
 
     def set_date(self, *args, **kwargs):
-        print("btn" in kwargs, self.SelectedDate.month == self.date.month, self.SelectedDate.year == self.date.year,
-              int(kwargs["btn"].text[23:kwargs["btn"].text[23:].find("[") + 23]) == self.SelectedDate.day)
         if "btn" in kwargs and self.SelectedDate.month == self.date.month and self.SelectedDate.year == self.date.year \
                 and int(kwargs["btn"].text[23:kwargs["btn"].text[23:].find("[") + 23]) == self.SelectedDate.day:
-            Clock.schedule_once(self.dismiss)
-            print"Hi"
+            print"hi"
+            self.dismiss()
         self.date = date(self.date.year, self.date.month, kwargs['day'])
         if "fromPress" in kwargs and kwargs["fromPress"]:
             self.SelectedDate = self.date
@@ -155,26 +155,21 @@ class DatePicker(BoxLayout):
         self.populate_header()
         self.populate_body()
 
-    def dismiss(self):
-        pass
 
 
 class DatePickerWidget(Widget):
     def __init__(self, **kwargs):
         super(DatePickerWidget, self).__init__(**kwargs)
         self.bind(size=self.resize)
+        self.dismiss = None
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
         self.dismiss = kwargs["dismiss"] if "dismiss" in kwargs else self.dismiss
         self.resize(*self.size)
-        self.add_widget(DatePicker())
+        self.add_widget(DatePicker(wdg=self))
         self.drawBackground()
         self.SelectedDate = self.children[0].SelectedDate
-        self.bind(on_dismiss=lambda inst, x: setattr(inst.children[0], "dismiss", x),
-                  SelectedDate=lambda inst, x: setattr(inst.children[0], "SelectedDate", x))
-
-    def dismiss(self):  # Overwrite this with your own function so that it will dismiss on double clicking a date.
-        pass
+        self.bind(on_dismiss=lambda inst, x: setattr(inst.children[0], "dismiss", inst.dismiss))
 
     def resize(self, width, height):
         self.drawBackground()
