@@ -225,18 +225,16 @@ class TabView(Widget):
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
                                   text="[color=000000][size=36]" + Month + "[/color][/size]",
                                   pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
-                                  valign="middle", on_release=self.dropDown.open,
+                                  valign="middle", on_release=lambda self: setattr(self.parent.datePicker, "pos", (0,0)),
                                   background_normal="", background_down="")
-        self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.height / 2, Window.height * 2 / 3))
-        print(partial(self.changeDate, date=self.datePicker.children[0].SelectedDate))
+        self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.width / 2, Window.height * 2 / 3), pos=(Window.width/4 ,9001))
+        print(self.datePicker.size, self.datePicker.pos)
         self.datePicker.dismiss = partial(self.changeDate, date=self.datePicker.children[0].SelectedDate)
-        self.dropDown.add_widget(self.datePicker)
-        self.dropDown.pos=(0,9001)
-        self.dropDown.bind(size=partial(genericResize, objs=(self.datePicker, self.datePicker.parent),
+        self.datePicker.bind(size=partial(genericResize, objs=self.datePicker,
                                         fct=lambda: (Window.height / 2, Window.height * 2 / 3)))
 
         self.add_widget(self.MonthButton)
-        self.add_widget(self.dropDown)
+        self.add_widget(self.datePicker)
 
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
@@ -251,7 +249,7 @@ class TabView(Widget):
 
     def _getImageSource(self, blockedImage):  # Changes the images on the empty days on click
         if self.randomImages and self.CurrentMonth in self.Images is not None and self.Images[
-            self.CurrentMonth].__len__() > 0:
+        self.CurrentMonth].__len__() > 0:
             img = self.Images[self.CurrentMonth][randint(0, self.Images[self.CurrentMonth].__len__() - 1)]
             if self.Images[self.CurrentMonth].__len__() > 1 and blockedImage is not None:
                 while img == blockedImage:
@@ -262,9 +260,10 @@ class TabView(Widget):
                 return img
         return "CalendarInactive.png"
 
-    def changeDate(self,date):
+    def changeDate(self, date):
         self.dropDown.dismiss(self.MonthButton)
-        print"hi2"
+        # TODO: Actually change the date here
+
 
 class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate with the floatbar.
     def _prev_slide(self):
