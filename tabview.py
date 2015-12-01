@@ -228,7 +228,8 @@ class TabView(Widget):
                                   valign="middle", on_release=self.dropDown.open,
                                   background_normal="", background_down="")
         self.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.height / 2, Window.height * 2 / 3))
-        self.datePicker.dismiss = partial(self.changeDate, date=self.datePicker.SelectedDate)
+        print(partial(self.changeDate, date=self.datePicker.children[0].SelectedDate))
+        self.datePicker.dismiss = partial(self.changeDate, date=self.datePicker.children[0].SelectedDate)
         self.dropDown.add_widget(self.datePicker)
         self.dropDown.pos=(0,9001)
         self.dropDown.bind(size=partial(genericResize, objs=(self.datePicker, self.datePicker.parent),
@@ -262,7 +263,8 @@ class TabView(Widget):
         return "CalendarInactive.png"
 
     def changeDate(self,date):
-        pass
+        self.dropDown.dismiss(self.MonthButton)
+        print"hi2"
 
 class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate with the floatbar.
     def _prev_slide(self):
