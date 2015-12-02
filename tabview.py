@@ -249,9 +249,12 @@ class TabView(Widget):
 
 def showDate(self):
     parent = self.parent
-    parent.datePicker = DatePickerWidget(size_hint_y=None, size=(Window.width * 2 / 3, Window.height * 2 / 3),
-                                         pos=(Window.width / 6,
-                                              Window.height / 3 - parent.topBarSize - parent.tabSize - parent.tabMargin))
+    if hasattr(parent,"datePicker"):
+        parent.remove_widget(parent.datePicker)
+    parent.datePicker = DatePickerWidget(size=(min(Window.width * 2 / 3, Window.height * 2 / 3),
+                                               min(Window.width * 2 / 3, Window.height * 2 / 3)),
+                                         pos=(Window.width / 2 - min(Window.width * 2 / 3, Window.height * 2 / 3) / 2,
+                                              Window.height / 3))
     parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.children[0].SelectedDate)
     parent.add_widget(parent.datePicker)
 
