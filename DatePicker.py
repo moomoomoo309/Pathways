@@ -1,4 +1,4 @@
-import calendar
+from calendar import calendar, monthrange
 from datetime import date, timedelta
 from functools import partial
 from random import randint
@@ -31,6 +31,12 @@ PrimaryColors = (
 )
 
 
+def getMonthLength(month, year):
+    return monthrange(year, month)[1]
+
+def getStartDay(month,year):
+    return monthrange(year, month)[0]
+
 # From http://stackoverflow.com/questions/3942878/
 def shouldUseWhiteText(color):
     fct = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
@@ -38,13 +44,18 @@ def shouldUseWhiteText(color):
 
 
 class DatePicker(BoxLayout):
+    SelectedDate = date.today()
+    SelectedColor = PrimaryColors[randint(0, len(PrimaryColors) - 1)]
+    date = date.today()
+    header = None
+    wdg = None
     def __init__(self, *args, **kwargs):
-        super(DatePicker, self).__init__(**kwargs)
+        super(DatePicker, self).__init__(*args, **kwargs)
         self.bind(size=self.resize)
-        self.SelectedColor = PrimaryColors[randint(0, len(PrimaryColors) - 1)]
-        self.SelectedDate = date.today()
-        #        self.bind(SelectedDate=lambda inst, newDate: setattr(inst.parent, "SelectedDate", newDate))
-        self.date = date.today()
+        self.bind(on_date=lambda inst, newDate: setattr(inst.parent, "rows",
+                                                             6 if getStartDay(newDate.month, newDate.year) % 7 +
+                                                                  getMonthLength(newDate.month, newDate.year) < 35 else
+                                                                  7))
         self.orientation = "vertical"
         self.month_names = ('January',
                             'February',
@@ -58,14 +69,13 @@ class DatePicker(BoxLayout):
                             'October',
                             'November',
                             'December')
-        if kwargs.has_key("month_names"):
+        if "month_names" in kwargs:
             self.month_names = kwargs['month_names']
-        self.header = BoxLayout(orientation='horizontal',
-                                size_hint=(1, 0.2))
+        self.header = kwargs["header"]
         self.body = GridLayout(cols=7)
         self.add_widget(self.header)
         self.add_widget(self.body)
-
+        self.parent = kwargs["wdg"]
         self.populate_body()
         self.populate_header()
 
@@ -75,30 +85,8 @@ class DatePicker(BoxLayout):
         self.populate_body()
         self.populate_header()
 
-    def populate_header(self, *args, **kwargs):
-        self.header.clear_widgets()
-        previous_month = Button(text="[color=000000][size=36]<[/color][/size]" if not shouldUseWhiteText(
-            self.SelectedColor) else "[color=ffffff][size=36]<[/color][/size]",
-                                on_press=partial(self.move_previous_month),
-                                background_down="", background_normal="", background_color=self.SelectedColor,
-                                markup=True)
-
-        next_month = Button(text="[color=000000][size=36]>[/color][/size]" if not shouldUseWhiteText(
-            self.SelectedColor) else "[color=ffffff][size=36]>[/color][/size]", on_press=self.move_next_month,
-                            background_down="", background_normal="", background_color=self.SelectedColor, markup=True)
-
-        month_year_text = self.month_names[self.date.month - 1] + ' ' + str(self.date.year)
-
-        current_month = Button(
-            text="[color=000000][size=36]" + month_year_text + "[/color][/size]" if not shouldUseWhiteText(
-                self.SelectedColor) else "[color=ffffff][size=36]" + month_year_text + "[/color][/size]",
-            size_hint=(2, 1),
-            markup=True, background_down="", background_normal="",
-            background_color=self.SelectedColor)
-
-        self.header.add_widget(previous_month)
-        self.header.add_widget(current_month)
-        self.header.add_widget(next_month)
+    def populate_header(self):
+        self.parent.populate_header()
 
     def populate_body(self, *args, **kwargs):
         self.body.clear_widgets()
@@ -114,8 +102,7 @@ class DatePicker(BoxLayout):
             date_label.on_press = partial(self.set_date, day=date_cursor.day, fromPress=True, btn=date_label)
             date_label.bind(size=lambda inst, x: setattr(inst, "text_size", inst.size))
             date_label.size = (self.body.size[0] / self.body.cols,
-                               self.body.size[0] / (6 if calendar.monthrange(self.date.year,
-                                                                             self.date.month)[1] +
+                               self.body.size[0] / (6 if monthrange(self.date.year, self.date.month)[1] +
                                                          date_cursor.isoweekday() % 7 >= 35 else 5))
             date_label.texture_size = (min(*date_label.size), min(*date_label.size))
 
@@ -155,6 +142,8 @@ class DatePicker(BoxLayout):
 
 
 class DatePickerWidget(Widget):
+    rows = 6
+    header = BoxLayout(orientation='horizontal', size_hint=(1, 0.2))
     def __init__(self, **kwargs):
         super(DatePickerWidget, self).__init__(**kwargs)
         self.bind(size=self.resize)
@@ -163,8 +152,8 @@ class DatePickerWidget(Widget):
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
         self.dismiss = kwargs["dismiss"] if "dismiss" in kwargs else self.dismiss
+        self.add_widget(DatePicker(size=self.size, pos=self.pos, header=self.header, wdg=self))
         self.resize(*self.size)
-        self.add_widget(DatePicker(size=self.size, pos=self.pos))
         self.drawBackground()
         self.SelectedDate = self.children[0].SelectedDate
 
@@ -179,13 +168,41 @@ class DatePickerWidget(Widget):
             self.canvas = self.canvas if self.canvas is not None else Canvas()
             self.canvas.before.clear()
             self.canvas.before.add(Color(0, 0, 0, 1))
-            self.canvas.before.add(Rectangle(pos=self.pos, size=self.size))
+            self.canvas.before.add(Rectangle(pos=(0, self.pos[1]), size=(Window.width, self.size[1])))
             self.canvas.before.add(Color(1, 1, 1, 1))
             self.canvas.before.add(
-                Rectangle(pos=(self.pos[0] + 1, self.pos[1] + 1), size=(self.size[0] - 2, self.size[1] - 2)))
+                Rectangle(pos=(1, self.pos[1] + 1), size=(Window.width - 2, self.size[1] - 2)))
+            self.canvas.before.add(Color(*self.children[0].SelectedColor))
+            self.canvas.before.add(Rectangle(pos=(0, self.pos[1] + self.size[1] - self.size[1] / self.rows - 2), size=(Window.width, self.size[1] / self.rows + 2)))
 
     def dismiss(self):
         pass
+
+    def populate_header(self, *args, **kwargs):
+        self.header.clear_widgets()
+        previous_month = Button(text="[color=000000][size=36]<[/color][/size]" if not shouldUseWhiteText(
+            self.children[0].SelectedColor) else "[color=ffffff][size=36]<[/color][/size]",
+                                on_press=partial(self.move_previous_month),
+                                background_down="", background_normal="", background_color=self.SelectedColor,
+                                markup=True)
+
+        next_month = Button(text="[color=000000][size=36]>[/color][/size]" if not shouldUseWhiteText(
+            self.SelectedColor) else "[color=ffffff][size=36]>[/color][/size]", on_press=self.move_next_month,
+                            background_down="", background_normal="", background_color=self.SelectedColor, markup=True)
+
+        month_year_text = self.month_names[self.date.month - 1] + ' ' + str(self.date.year)
+
+        current_month = Button(
+            text="[color=000000][size=36]" + month_year_text + "[/color][/size]" if not shouldUseWhiteText(
+                self.SelectedColor) else "[color=ffffff][size=36]" + month_year_text + "[/color][/size]",
+            size_hint=(2, 1),
+            markup=True, background_down="", background_normal="",
+            background_color=self.SelectedColor)
+
+        self.header.add_widget(previous_month)
+        self.header.add_widget(current_month)
+        self.header.add_widget(next_month)
+
 
 class MyApp(App):
     def build(self):
