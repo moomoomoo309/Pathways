@@ -20,7 +20,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 
 from Calendar import Calendar30Days
-from DatePicker import DatePickerWidget
+from DatePicker import DatePickerWidget, getMonthLength, getStartDay
 
 # Name of each month
 
@@ -249,12 +249,16 @@ class TabView(Widget):
 
 def showDate(self):
     parent = self.parent
-    if hasattr(parent,"datePicker"):
+    if hasattr(parent, "datePicker"):
         parent.remove_widget(parent.datePicker)
+    rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(date.today().month,
+                                                                                        date.today().year) < 35 else 7
+
     parent.datePicker = DatePickerWidget(size=(min(Window.width * 2 / 3, Window.height * 2 / 3),
-                                               min(Window.width * 2 / 3, Window.height * 2 / 3)),
+                                               min(Window.width * 2 / 3, Window.height * 2 / 3) * (rows + 1) / rows),
                                          pos=(Window.width / 2 - min(Window.width * 2 / 3, Window.height * 2 / 3) / 2,
-                                              Window.height / 3))
+                                              Window.height - min(Window.width * 2 / 3, Window.height * 2 / 3) * (rows + 1) / rows - parent.topBarSize))
+    print(parent.datePicker.pos)
     parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.children[0].SelectedDate)
     parent.add_widget(parent.datePicker)
 
