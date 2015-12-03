@@ -142,8 +142,15 @@ class TabView(Widget):
             elif i == self.MonthButton:
                 i.pos = (-1, self.size[1] - self.topBarSize)
                 i.size = (self.size[0], self.topBarSize)
-            elif i == self.dropDown:
-                i.size = (Window.height / 2, Window.height * 2 / 3)
+            elif i == self.datePicker:
+                rows = 6 if getStartDay(i.children[0].date.month, i.children[0].date.year) % 7 + getMonthLength(
+                    i.children[0].date.month,
+                    i.children[0].date.year) < 35 else 7
+                i.size = (min(Window.width, Window.height), min(Window.width, Window.height) * 2 / 3 *
+                                   (rows + 1) / rows)
+                i.pos = (Window.width / 2 - min(Window.width, Window.height) / 2,
+                      Window.height - min(Window.width, Window.height) * 2 / 3 * (
+                      rows + 1) / rows)
             elif isinstance(i, Button):
                 i.pos = (self._getTabButtonPos(i.i))
                 i.size = (self._getTabButtonSize())
@@ -254,12 +261,13 @@ def showDate(self):
     rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(date.today().month,
                                                                                         date.today().year) < 35 else 7
 
-    parent.datePicker = DatePickerWidget(size=(min(Window.width * 2 / 3, Window.height * 2 / 3),
-                                               min(Window.width * 2 / 3, Window.height * 2 / 3) * (rows + 1) / rows),
-                                         pos=(Window.width / 2 - min(Window.width * 2 / 3, Window.height * 2 / 3) / 2,
-                                              Window.height - min(Window.width * 2 / 3, Window.height * 2 / 3) * (rows + 1) / rows - parent.topBarSize))
-    print(parent.datePicker.pos)
-    parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.children[0].SelectedDate)
+    parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), min(Window.width, Window.height) * 2 / 3 *
+                                               (rows + 1) / rows),
+                                         pos=(Window.width / 2 - min(Window.width, Window.height) / 2,
+                                              Window.height - min(Window.width, Window.height) * 2 / 3 * (
+                                              rows + 1) / rows))
+
+    parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.child.SelectedDate)
     parent.add_widget(parent.datePicker)
 
 
