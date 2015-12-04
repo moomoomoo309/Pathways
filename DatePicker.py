@@ -49,9 +49,9 @@ class DatePicker(BoxLayout):
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__(**kwargs)
         self.bind(size=self.resize)
+        self.bind(parent=lambda self, parent: self.populate_header())
         self.SelectedColor = PrimaryColors[randint(0, len(PrimaryColors) - 1)]
         self.SelectedDate = date.today()
-        self.header = kwargs["wdg"].header
         #        self.bind(SelectedDate=lambda inst, newDate: setattr(inst.parent, "SelectedDate", newDate))
         self.date = date.today()
         self.orientation = "vertical"
@@ -73,17 +73,19 @@ class DatePicker(BoxLayout):
         self.add_widget(self.body)
 
         self.populate_body()
-        self.populate_header()
+        if self.parent is not None:
+            self.populate_header()
 
     def resize(self, _, size):
         self.header.size = (size[0], size[1] * .2)
         self.body.size = (size[0], size[1] * .8)
         self.populate_body()
-        self.populate_header()
+        if self.parent is not None:
+            self.populate_header()
 
     def populate_header(self, *args, **kwargs):
         textSize = 36
-        self.header.clear_widgets()
+        self.parent.header.clear_widgets()
         previous_month = Button(
             text="[color=000000][size=" + str(textSize) + "]<[/color][/size]" if not shouldUseWhiteText(
                 self.SelectedColor) else "[color=ffffff][size=" + str(textSize) + "]<[/color][/size]",
@@ -107,9 +109,9 @@ class DatePicker(BoxLayout):
             markup=True, background_down="", background_normal="",
             background_color=self.SelectedColor)
 
-        self.header.add_widget(previous_month)
-        self.header.add_widget(current_month)
-        self.header.add_widget(next_month)
+        self.parent.header.add_widget(previous_month)
+        self.parent.header.add_widget(current_month)
+        self.parent.header.add_widget(next_month)
 
     def populate_body(self, *args, **kwargs):
         textSize = 28
@@ -168,13 +170,13 @@ class DatePicker(BoxLayout):
 
 
 class DatePickerWidget(Widget):
-    header = BoxLayout(orientation='horizontal',
-                       size_hint=(1, 0.2), pos=(0, Window.height))
+    header = None
     originalWidth = 0
     originalX = 0
     child = None
     def __init__(self, **kwargs):
         super(DatePickerWidget, self).__init__(**kwargs)
+        self.header = BoxLayout(orientation='horizontal', size=(Window.width, 0), pos=(0, Window.height))
         self.bind(size=self.resize)
         self.bind(on_dismiss=lambda inst, x: setattr(inst.children[0], "dismiss", inst.dismiss),
                   pos=self.resize)
@@ -184,13 +186,15 @@ class DatePickerWidget(Widget):
         self.pos = (0, kwargs["pos"][1]) if "pos" in kwargs else (0, 0)
         self.dismiss = kwargs["dismiss"] if "dismiss" in kwargs else self.dismiss
         self.resize(*self.size)
+        self.add_widget(self.header)
         rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(
             date.today().month, date.today().year) < 35 else 7
-        self.child = DatePicker(size=(self.originalWidth, self.height*rows/(rows+1)), pos=(self.originalX, self.pos[1]+self.size[1]/(rows+1)), wdg=self)
+        self.header.size[1] = self.height / (rows+1)
+        self.header.pos[1] = Window.height - self.header.height
+        self.child = DatePicker(size=(self.originalWidth, self.height*rows/(rows+1)), pos=(self.originalX, self.pos[1]), wdg=self)
         self.add_widget(self.child)
-        print(self.child.size,self.child.pos)
+        print(self.child.size, self.child.pos)
         self.drawBackground()
-        self.add_widget(self.header)
         self.SelectedDate = self.child.SelectedDate
 
     def resize(self, width, height):
