@@ -114,7 +114,7 @@ class TabView(Widget):
             direction="left", min_move=.05, screenNames=self.screenNames)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
-        self._drawGui(Month=MonthNames[self.CurrentMonth])
+        self._drawGui(Month=str(MonthNames[self.CurrentMonth])+" "+str(date.today().year))
         # Draw the top bar
         for i in range(self.numTabs - 1, -1, -1):
             testScreen = Screen(name=self.screenNames[i],
@@ -261,11 +261,9 @@ def showDate(self):
     rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(date.today().month,
                                                                                         date.today().year) < 35 else 7
 
-    parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), min(Window.width, Window.height) * 2 / 3 *
-                                               (rows + 1) / rows),
+    parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), parent.topBarSize * (rows+1)),
                                          pos=(Window.width / 2 - min(Window.width, Window.height) / 2,
-                                              Window.height - min(Window.width, Window.height) * 2 / 3 * (
-                                              rows + 1) / rows))
+                                              Window.height - parent.topBarSize * (rows+1)))
 
     parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.child.SelectedDate)
     parent.add_widget(parent.datePicker)
