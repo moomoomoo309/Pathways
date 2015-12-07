@@ -143,7 +143,7 @@ class TabView(Widget):
             elif i == self.MonthButton:
                 i.pos = (-1, self.size[1] - self.topBarSize)
                 i.size = (self.size[0], self.topBarSize)
-            elif i == self.datePicker:
+            elif hasattr(self, "datePicker") and i == self.datePicker:
                 rows = 6 if getStartDay(i.children[0].date.month, i.children[0].date.year) % 7 + getMonthLength(
                     i.children[0].date.month,
                     i.children[0].date.year) < 35 else 7
@@ -221,8 +221,8 @@ class TabView(Widget):
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
                                   text="[color=000000][size=36]" + Month + "[/color][/size]",
                                   pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
-                                  valign="middle", on_press=showDate, background_normal="CalendarInactive.png",
-                                  background_down="CalendarInactive.png")
+                                  valign="middle", on_press=showDate, background_color=(1,0,1,1),
+                                  background_normal="CalendarInactive.png", background_down="CalendarInactive.png")
 
         self.add_widget(self.MonthButton)
 
@@ -394,7 +394,10 @@ class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate 
 def genericResize(*args, **kwargs):  # Resizes the whole tabview (which runs its resize method)
     if isinstance(kwargs["objs"], (list, tuple)):
         for i in kwargs["objs"]:
-            i.size = kwargs["fct"]()
+            if isinstance(kwargs["fct"], (list, tuple)):
+                i.size = kwargs["fct"][kwargs["objs"].index(i)]()
+            else:
+                i.size = kwargs["fct"]()
     else:
         kwargs["objs"].size = kwargs["fct"]()
 
