@@ -18,6 +18,7 @@ from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
+from kivy.uix.settings import Settings
 
 from Calendar import Calendar30Days
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
@@ -396,7 +397,6 @@ def genericResize(*args, **kwargs):  # Resizes the whole tabview (which runs its
             i.size = kwargs["fct"]()
     else:
         kwargs["objs"].size = kwargs["fct"]()
-
 
 def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
