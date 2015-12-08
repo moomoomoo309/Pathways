@@ -124,7 +124,7 @@ class DatePicker(BoxLayout):
             date_label = Button(
                 text="[color=000000][size=" + str(textSize) + "]" + str(date_cursor.day) + "[/color][/size]",
                 markup=True, background_down="Circle3.png", allow_stretch=True, keep_ratio=False,
-                background_color=(0, 0, 0, 0), halign="center", valign="middle")
+                background_color=(0, 0, 0, 0), halign="center", valign="middle", mipmap=True)
             date_label.on_press = partial(self.set_date, day=date_cursor.day, fromPress=True, btn=date_label)
             date_label.bind(size=lambda inst, x: setattr(inst, "text_size", inst.size))
             date_label.size = (self.body.size[0] / self.body.cols,
