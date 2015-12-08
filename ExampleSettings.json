@@ -1,0 +1,28 @@
+[
+  {
+    "type": "numeric",
+    "desc": "Any number",
+    "title": "Number Example",
+    "section": "Examples",
+    "key": "numeric"
+  },
+  {
+    "type": "bool",
+    "title": "Checkbox Example",
+    "section": "Examples",
+    "key": "checkbox"
+  },
+  {
+    "type": "options",
+    "title": "List example",
+    "section": "Examples",
+    "key": "list",
+    "options": [
+      "Option 1",
+      "Option 2",
+      "Option 3",
+      "Option 4",
+      "Option 5"
+    ]
+  }
+]

@@ -1,4 +1,4 @@
-from calendar import calendar, monthrange
+from calendar import monthrange
 from datetime import date, timedelta
 from functools import partial
 from random import randint
@@ -77,8 +77,8 @@ class DatePicker(BoxLayout):
             self.populate_header()
 
     def resize(self, _, size):
-        self.header.size = (size[0], size[1] * .2)
-        self.body.size = (size[0], size[1] * .8)
+        self.parent.header.size = (Window.width, size[1] * .2)
+        self.body.size = (Window.width, size[1] * .8)
         self.populate_body()
         if self.parent is not None:
             self.populate_header()
@@ -105,7 +105,6 @@ class DatePicker(BoxLayout):
                 textSize) + "]" + month_year_text + "[/color][/size]" if not shouldUseWhiteText(
                 self.SelectedColor) else "[color=ffffff][size=" + str(
                 textSize) + "]" + month_year_text + "[/color][/size]",
-            size_hint=(2, 1),
             markup=True, background_down="", background_normal="",
             background_color=self.SelectedColor)
 
@@ -124,7 +123,7 @@ class DatePicker(BoxLayout):
 
             date_label = Button(
                 text="[color=000000][size=" + str(textSize) + "]" + str(date_cursor.day) + "[/color][/size]",
-                markup=True, background_down="Circle2.png", allow_stretch=True, keep_ratio=False,
+                markup=True, background_down="Circle3.png", allow_stretch=True, keep_ratio=False,
                 background_color=(0, 0, 0, 0), halign="center", valign="middle")
             date_label.on_press = partial(self.set_date, day=date_cursor.day, fromPress=True, btn=date_label)
             date_label.bind(size=lambda inst, x: setattr(inst, "text_size", inst.size))
@@ -174,6 +173,8 @@ class DatePickerWidget(Widget):
     originalWidth = 0
     originalX = 0
     child = None
+    lastX, lastWidth = 0, 0
+
     def __init__(self, **kwargs):
         super(DatePickerWidget, self).__init__(**kwargs)
         self.header = BoxLayout(orientation='horizontal', size=(Window.width, 0), pos=(0, Window.height))
@@ -185,27 +186,32 @@ class DatePickerWidget(Widget):
         self.size = (Window.width, kwargs["size"][1]) if "size" in kwargs else (100, 100)
         self.pos = (0, kwargs["pos"][1]) if "pos" in kwargs else (0, 0)
         self.dismiss = kwargs["dismiss"] if "dismiss" in kwargs else self.dismiss
+        self.lastX = self.originalX
+        self.lastWidth = self.originalWidth
         self.resize(*self.size)
         self.add_widget(self.header)
         rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(
             date.today().month, date.today().year) < 35 else 7
-        self.header.size[1] = self.height / (rows+1)
+        self.header.size[1] = self.height / (rows + 1)
         self.header.pos[1] = Window.height - self.header.height
-        self.child = DatePicker(size=(self.originalWidth, self.height*rows/(rows+1)), pos=(self.originalX, self.pos[1]), wdg=self)
+        self.child = DatePicker(size=(self.originalWidth, self.height * rows / (rows + 1)),
+                                pos=(self.originalX, self.pos[1]), wdg=self)
         self.add_widget(self.child)
-        print(self.child.size, self.child.pos)
         self.drawBackground()
         self.SelectedDate = self.child.SelectedDate
 
-    def resize(self, width, height):
-        self.originalX += (Window.width - self.width) / 2
-        self.originalWidth += Window.width - self.width
+    def resize(self, _, size):
+        self.lastWidth = self.originalWidth
+        self.lastX = self.originalX
         self.drawBackground()
+        self.header.width = Window.width
+        self.header.pos[1] = Window.height - self.header.height
         if len(self.children) > 0:
             rows = 6 if getStartDay(self.child.date.month, self.child.date.year) % 7 + getMonthLength(
                 self.child.date.month, self.child.date.year) < 35 else 7
-            self.child.pos = (self.originalX, self.pos[1]+self.height/(rows+1))
-            self.child.size = (self.originalWidth, self.height*rows/(rows+1))
+            self.child.width = self.originalWidth + self.pos[0] - 100
+            self.child.pos = ((Window.width - self.child.width) / 2, self.pos[1])
+            self.child.height = self.height * rows / (rows + 1)
 
     def drawBackground(self):
         if min(*self.size) > 0:

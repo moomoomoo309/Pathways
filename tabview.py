@@ -2,15 +2,11 @@ import calendar
 from datetime import date, datetime
 from os.path import isfile
 from random import randint
-
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.dropdown import DropDown
@@ -18,10 +14,17 @@ from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
-from kivy.uix.settings import Settings
+
+from kivy.graphics.instructions import InstructionGroup
+
+from kivy.graphics.vertex_instructions import Rectangle
+
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 
 from Calendar import Calendar30Days
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
+
+
 
 # Name of each month
 
@@ -147,11 +150,9 @@ class TabView(Widget):
                 rows = 6 if getStartDay(i.children[0].date.month, i.children[0].date.year) % 7 + getMonthLength(
                     i.children[0].date.month,
                     i.children[0].date.year) < 35 else 7
-                i.size = (min(Window.width, Window.height), min(Window.width, Window.height) * 2 / 3 *
-                                   (rows + 1) / rows)
+                i.size = (min(Window.width, Window.height), self.topBarSize * (rows + 1))
                 i.pos = (Window.width / 2 - min(Window.width, Window.height) / 2,
-                      Window.height - min(Window.width, Window.height) * 2 / 3 * (
-                      rows + 1) / rows)
+                         Window.height - self.topBarSize * (rows + 1))
             elif isinstance(i, Button):
                 i.pos = (self._getTabButtonPos(i.i))
                 i.size = (self._getTabButtonSize())
@@ -221,7 +222,7 @@ class TabView(Widget):
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
                                   text="[color=000000][size=36]" + Month + "[/color][/size]",
                                   pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
-                                  valign="middle", on_press=showDate, background_color=(1,0,1,1),
+                                  valign="middle", on_press=showDate, background_color=(1, 1, 1, 1),
                                   background_normal="CalendarInactive.png", background_down="CalendarInactive.png")
 
         self.add_widget(self.MonthButton)
