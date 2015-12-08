@@ -2,11 +2,14 @@ import calendar
 from datetime import date, datetime
 from functools import partial
 from kivy.config import ConfigParser
-from kivy.uix.settings import Settings
+from kivy.properties import BoundedNumericProperty
+from kivy.uix.label import Label
+from kivy.uix.settings import Settings, SettingItem
 from kivy.app import App
 from kivy.uix.screenmanager import Screen, ScreenManager, NoTransition
 from kivy.core.window import Window
 from kivy.uix.button import Button
+from kivy.uix.slider import Slider
 
 from Calendar import Calendar30Days
 from tabview import TabView, genericResize
@@ -18,6 +21,19 @@ def makeCalWidget(self):  # Initializes the Calendar grid
                           MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
                           size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
                           online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
+
+class SettingSlider(SettingItem):
+    value = BoundedNumericProperty(min=0, defaultvalue=50)
+    def __init__(self, **kwargs):
+        super(SettingSlider, self).__init__(**kwargs)
+        self.value = self.panel.get_value(self.section, self.key)
+        self.label = Label(text=str(self.value))
+        self.add_widget(self.label)
+        self.slider = Slider(min=0, max=100, value=self.value, step=1)
+        self.add_widget(self.slider)
+        self.slider.bind(value=lambda self,newVal: setattr(self.parent.parent.parent.label, "text", str(int(newVal))))
+        self.label.bind(text=lambda self,newVal: setattr(self.parent.parent.parent, "value", int(newVal)))
+
 
 
 class main(App):
@@ -49,6 +65,7 @@ class main(App):
         appScreen.add_widget(settingsButton)
 
         settings = Settings()
+        settings.register_type("slider", SettingSlider)
         settings.on_close = lambda: setattr(screenManager, "current", screenManager.screens[0].name)
         configParser = ConfigParser()
         configParser.read("Settings.cfg")
