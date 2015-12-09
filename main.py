@@ -1,3 +1,4 @@
+from __future__ import print_function
 import calendar
 from datetime import date, datetime
 from functools import partial
@@ -29,7 +30,7 @@ class SettingSlider(SettingItem):
         self.value = self.panel.get_value(self.section, self.key)
         self.label = Label(text=str(self.value))
         self.add_widget(self.label)
-        self.slider = Slider(min=0, max=100, value=self.value, step=1)
+        self.slider = Slider(min=0, max=100, value=self.value, step=1, size_hint_x=5)
         self.add_widget(self.slider)
         self.slider.bind(value=lambda self,newVal: setattr(self.parent.parent.parent.label, "text", str(int(newVal))))
         self.label.bind(text=lambda self,newVal: setattr(self.parent.parent.parent, "value", int(newVal)))
