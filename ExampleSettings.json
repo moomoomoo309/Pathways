@@ -1,8 +1,8 @@
 [
   {
-    "type": "numeric",
-    "desc": "Any number",
-    "title": "Number Example",
+    "type": "slider",
+    "desc": "Slider",
+    "title": "Slider Example",
     "section": "Examples",
     "key": "numeric"
   },

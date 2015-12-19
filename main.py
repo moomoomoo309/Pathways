@@ -1,20 +1,23 @@
 from __future__ import print_function
+
 import calendar
 from datetime import date, datetime
 from functools import partial
-from kivy.config import ConfigParser
-from kivy.properties import BoundedNumericProperty
-from kivy.uix.label import Label
-from kivy.uix.settings import Settings, SettingItem
+
 from kivy.app import App
-from kivy.uix.screenmanager import Screen, ScreenManager, NoTransition
+from kivy.config import ConfigParser
 from kivy.core.window import Window
+from kivy.properties import BoundedNumericProperty
 from kivy.uix.button import Button
+from kivy.uix.label import Label
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.screenmanager import Screen, ScreenManager, NoTransition
+from kivy.uix.settings import Settings, SettingItem
 from kivy.uix.slider import Slider
 
 from Calendar import Calendar30Days
-from tabview import TabView, genericResize
 from DatePicker import shouldUseWhiteText
+from tabview import TabView, genericResize
 
 
 def makeCalWidget(self):  # Initializes the Calendar grid
@@ -38,6 +41,7 @@ class SettingSlider(SettingItem):
 
 
 class main(App):
+    layout = RelativeLayout()
     def build(self):
         topBarSize = 75
         app = TabView(size=(Window.width, Window.height), randomImages=True, online=False, topBarSize=topBarSize)
