@@ -75,6 +75,7 @@ class main(App):
         configParser = ConfigParser()
         configParser.read("Settings.cfg")
         configParser.adddefaultsection("Examples")
+        configParser.setdefault("Examples", "num", 0)
         configParser.setdefault("Examples", "numeric", 50)
         configParser.setdefault("Examples", "Checkbox", False)
         configParser.setdefault("Examples", "List", "Option 1")

@@ -7,6 +7,13 @@
     "key": "numeric"
   },
   {
+    "type": "numeric",
+    "desc": "numeric",
+    "title": "Numeric Example",
+    "section": "Examples",
+    "key": "num"
+  },
+  {
     "type": "bool",
     "title": "Checkbox Example",
     "section": "Examples",

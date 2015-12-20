@@ -67,7 +67,7 @@ class DatePicker(BoxLayout):
                             'October',
                             'November',
                             'December')
-        if kwargs.has_key("month_names"):
+        if "month_names" in kwargs:
             self.month_names = kwargs['month_names']
         self.body = GridLayout(cols=7)
         self.add_widget(self.body)

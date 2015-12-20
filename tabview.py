@@ -1,12 +1,16 @@
-import calendar
+from calendar import monthrange
 from datetime import date, datetime
 from os.path import isfile
 from random import randint
+
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.dropdown import DropDown
@@ -15,16 +19,8 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 
-from kivy.graphics.instructions import InstructionGroup
-
-from kivy.graphics.vertex_instructions import Rectangle
-
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
-
 from Calendar import Calendar30Days
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
-
-
 
 # Name of each month
 
@@ -403,7 +399,7 @@ def genericResize(*args, **kwargs):  # Resizes the whole tabview (which runs its
         kwargs["objs"].size = kwargs["fct"]()
 
 def makeCalWidget(self):  # Initializes the Calendar grid
-    return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
+    return Calendar30Days(MonthLength=monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
                           MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
                           size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
                           online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)

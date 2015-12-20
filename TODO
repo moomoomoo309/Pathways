@@ -2,7 +2,7 @@
 
 2) Write the schedule view (A BoxLayout or GridLayout separated by date with the dates on the left side, and a BorderImage between elements, with the actual events located on the right)
 
-3) Write the settings menu (Kivy has built-in stuff for this! Look for it!)
+DONE 3) Write the settings menu (Kivy has built-in stuff for this! Look for it!)
 
 4) Figure out how to package the app for Android AND iOS (Buildozer is a bit finnicky, unfortunately.)
 
