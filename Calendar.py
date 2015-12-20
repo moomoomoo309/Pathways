@@ -1,30 +1,59 @@
-import calendar
+from calendar import monthrange
+from datetime import date
 
-from kivy.properties import BooleanProperty, BoundedNumericProperty
+from kivy.properties import BooleanProperty, BoundedNumericProperty, ObjectProperty
+from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 
 from AsyncImageButton import AsyncImageButton
 
 
-class CalendarLessThan30Days(Widget):  # Single day will be a special case.
+class CalendarSingleDay(Widget):  # This will be very similar to CalendarLessThan30Days.
     pass
 
 
-# The grid which contains the 30(ish) days for each month
+class CalendarLessThan30Days(Widget):
+    outerLayout = BoxLayout(orientation="horizontal")
+    dayBarLayout = BoxLayout(orientation="vertical")
+    bodyLayout = BoxLayout(orientation="vertical")
+    bodyView = ScrollView(size_hint_y=None)
+    days = BoundedNumericProperty(7, min=1, max=7)
+    HourBar = RelativeLayout()
+    dayList = []
+
+    def __init__(self):
+        super(CalendarLessThan30Days, self).__init__()
+        self.outerLayout.add_widget(self.dayBarLayout)
+        self.outerLayout.add_widget(self.bodyView)
+        self.bodyView.add_widget(self.bodyLayout)
+        if self.days > 1:
+            self.bodyLayout.add_widget(self.HourBar)
+        for i in range(self.days):
+            self.dayList[i] = RelativeLayout()
+            self.bodyLayout.add_widget(self.dayList[i])
+
+
+
 class Calendar30Days(Widget):
     randomImages = BooleanProperty(False)
     online = BooleanProperty(True)
-    topBarSize = BoundedNumericProperty(0, min=0)
-    MonthLength = BoundedNumericProperty(30, min=28, max=31)
+    topBarSize = BoundedNumericProperty(75, min=0)
+    startDate = ObjectProperty(allow_none=True, baseclass=date)
+    # Lets you put in a date class instead of specifying MonthLength or MonthStart
+    MonthLength = BoundedNumericProperty(monthrange(date.today().year, date.today().month)[1], min=28, max=31)
     # The length of the current month
-    MonthStart = BoundedNumericProperty(0, min=0, max=6)
+    MonthStart = BoundedNumericProperty((date.today().replace(day=1).weekday() + 1) % 7, min=0, max=6)
     # The day of the week the month starts on
     gridSize = 0
 
     def __init__(self, **kwargs):
         super(Calendar30Days, self).__init__()  # I need this line for reasons.
+        if self.startDate is not None:
+            self.setDate(self.startDate)
         self.getImageSource = kwargs["getImageSource"] if "getImageSource" in kwargs else lambda \
                 x: "CalendarInactive.png"
         self.size = kwargs["size"] if "size" in kwargs else [100, 100]
@@ -69,6 +98,6 @@ class Calendar30Days(Widget):
         self.Layout.pos = self.pos
 
     def setDate(self, date):
-        self.MonthLength = calendar.monthrange(date.year, date.month)[1]
+        self.MonthLength = monthrange(date.year, date.month)[1]
         self.MonthStart = (date.replace(day=1).weekday() + 1) % 7
         self.populate_body()

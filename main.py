@@ -84,6 +84,5 @@ class main(App):
         settingsScreen.add_widget(settings)
         return screenManager
 
-
 if __name__ == "__main__":
     main().run()
