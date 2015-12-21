@@ -13,35 +13,13 @@ from kivy.uix.widget import Widget
 from AsyncImageButton import AsyncImageButton
 
 
-class CalendarSingleDay(Widget):  # This will be very similar to CalendarLessThan30Days.
-    pass
-
-
-class CalendarLessThan30Days(Widget):
-    outerLayout = BoxLayout(orientation="horizontal")
-    dayBarLayout = BoxLayout(orientation="vertical")
-    bodyLayout = BoxLayout(orientation="vertical")
-    bodyView = ScrollView(size_hint_y=None)
-    days = BoundedNumericProperty(7, min=1, max=7)
-    HourBar = RelativeLayout()
-    dayList = []
-
-    def __init__(self):
-        super(CalendarLessThan30Days, self).__init__()
-        self.outerLayout.add_widget(self.dayBarLayout)
-        self.outerLayout.add_widget(self.bodyView)
-        self.bodyView.add_widget(self.bodyLayout)
-        if self.days > 1:
-            self.bodyLayout.add_widget(self.HourBar)
-        for i in range(self.days):
-            self.dayList[i] = RelativeLayout()
-            self.bodyLayout.add_widget(self.dayList[i])
-
-
 class Calendar30Days(Widget):
     randomImages = BooleanProperty(False)
+    # Use random images on empty days
     online = BooleanProperty(True)
+    # If randomImages is true, get images from the internet
     topBarSize = BoundedNumericProperty(75, min=0)
+    # Size of the top bar for placement purposes
     startDate = ObjectProperty(allow_none=True, baseclass=date)
     # Lets you put in a date class instead of specifying MonthLength or MonthStart
     MonthLength = BoundedNumericProperty(monthrange(date.today().year, date.today().month)[1], min=28, max=31)
@@ -63,18 +41,18 @@ class Calendar30Days(Widget):
         self.rows = 7  # Extra row for dayNames
         if self.MonthLength + self.MonthStart < 36:
             self.rows = 6
-        # The grid is 7x6 because 7x5 isn't enough for months which start on Saturday
+        # The grid is 7x7 because 7x6 isn't enough for months which start on Saturday
         # Keep it within its bounds.
         self.spacing = 1
         self.Layout = GridLayout(pos=self.pos, size=self.size, rows=self.rows, cols=self.cols, spacing=self.spacing)
         self.populate_body()
-        # The empty images after the month in the calendar
         self.add_widget(self.Layout)
 
     def populate_body(self):
         self.Layout.clear_widgets()
         self.gridSize = (self.size[0] / self.cols, self.size[1] / self.rows)
 
+        # Add the names of the days of the week
         dayNames = ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
         for i in range(7):
             btn = Button(texture=None, background_normal="CalendarInactive.png",
@@ -83,6 +61,7 @@ class Calendar30Days(Widget):
                          text="[color=000000][size=36]" + dayNames[i][0] + "[/color][/size]",
                          markup=True, halign="center", valign="middle", text_size=self.gridSize)
             btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
+            # Keep the text_size correct so the text lines up correctly on resize
             self.Layout.add_widget(btn)
         for i in range(0, self.MonthStart):
             self.Layout.add_widget(
@@ -91,15 +70,19 @@ class Calendar30Days(Widget):
                                      on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
             # If the month doesn't start on a Monday, you need empty days.
 
+        # Add all of the days
         for i in range(0, self.MonthLength):
             btn = ToggleButton(texture=None, background_normal="CalendarInactive.png",
                                background_down="CalendarActive.png", group="Calendar30Days",
                                text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]",
                                markup=True, halign="left", valign="top", text_size=self.gridSize)
             btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
+            # Keep text lined up on resize
             self.Layout.add_widget(btn)
             # The group means they act as radio buttons, so only one is toggleable at a time.
             # They will be changed to be normal buttons which switch to the day view with the date of the button.
+
+        # Add filler days at the end of the month if necessary
         for i in range(0, self.rows * self.cols - self.MonthLength - self.MonthStart - 7):
             # Subtract 7 to remove dayNames
             self.Layout.add_widget(
