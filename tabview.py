@@ -13,7 +13,6 @@ from kivy.graphics.vertex_instructions import Rectangle
 from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
-from kivy.uix.dropdown import DropDown
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
@@ -213,8 +212,6 @@ class TabView(Widget):
                          markup=True, halign="center", valign="middle", on_press=self._switchCalScreen)
             btn.i = i
             self.add_widget(btn)
-        self.dropDown = DropDown()
-
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
                                   text="[color=000000][size=36]" + Month + "[/color][/size]",
                                   pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
@@ -252,10 +249,11 @@ class TabView(Widget):
         # TODO: Actually change the date here
 
 
-def showDate(self):
+def showDate(self): # Pops up the datePicker, adding the widget when it's needed
     parent = self.parent
     if hasattr(parent, "datePicker"):
         parent.remove_widget(parent.datePicker)
+    # Make sure to remove the old datePicker if it exists
     rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(date.today().month,
                                                                                         date.today().year) < 35 else 7
 
@@ -264,6 +262,7 @@ def showDate(self):
                                               Window.height - parent.topBarSize * (rows+1)))
 
     parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.child.SelectedDate)
+    # Changes the date when the date is picked (The method is NYI, but it will work once it is)
     parent.add_widget(parent.datePicker)
 
 
@@ -388,7 +387,7 @@ class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate 
         # Yeah, this is accessing a protected member of a parent class. It's supposed to.
 
 
-def genericResize(*args, **kwargs):  # Resizes the whole tabview (which runs its resize method)
+def genericResize(*args, **kwargs):  # Generic method to resize any objects with given function(s)
     if isinstance(kwargs["objs"], (list, tuple)):
         for i in kwargs["objs"]:
             if isinstance(kwargs["fct"], (list, tuple)):
