@@ -1,4 +1,4 @@
-# A normal asyncimage with an on_press function!
+# A normal AsyncImage with an on_press function!
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.image import AsyncImage
 

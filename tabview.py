@@ -28,6 +28,7 @@ MonthNames = ("January", "February", "March", "April", "May", "June", "July", "A
 
 
 class TabView(Widget):
+    # Replace these with pictures of your choice.
     Images = DictProperty(
         {10: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
               "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
@@ -35,31 +36,29 @@ class TabView(Widget):
               "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
-    # Replace these with pictures of your choice.
 
-    screenNames = ListProperty(["Schedule", "1 Day", "3 Day", "Week", "Month"])
     # The name of all of the screens
-    randomImages = BooleanProperty(False)
+    screenNames = ListProperty(["Schedule", "1 Day", "3 Day", "Week", "Month"])
     # Use random images to fill the empty days of the calendar
-    online = BooleanProperty(True)
+    randomImages = BooleanProperty(False)
     # Get images from the internet
-    topBarSize = BoundedNumericProperty(75, min=0)
+    online = BooleanProperty(True)
     # The size of the top bar
-    tabSize = BoundedNumericProperty(50, min=0)
+    topBarSize = BoundedNumericProperty(75, min=0)
     # The size of the tabs vertically.
-    tabMargin = BoundedNumericProperty(2, min=0)
+    tabSize = BoundedNumericProperty(50, min=0)
     # The space between the top bar and the tab bar.
-    numTabs = BoundedNumericProperty(5, min=1)
+    tabMargin = BoundedNumericProperty(2, min=0)
     # The number of tabs displayed at once
-    floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
+    numTabs = BoundedNumericProperty(5, min=1)
     # How much of the tab bar should be taken up by the float bar
-    tabBarColor = ListProperty([1, 0, 0])
+    floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
     # Color of the tab bar
-    floatBarColor = ListProperty([.75, 0, 0, 1])
+    tabBarColor = ListProperty([1, 0, 0])
     # Color of the thin bar below the tabs on the tab bar
-    currentTab = BoundedNumericProperty(4, min=0)
-
+    floatBarColor = ListProperty([.75, 0, 0, 1])
     # The tab currently selected
+    currentTab = BoundedNumericProperty(4, min=0)
 
     def __init__(self, **kwargs):
         super(TabView, self).__init__()  # I need this line for reasons.
@@ -76,23 +75,28 @@ class TabView(Widget):
         self.floatBarColor = kwargs["floatBarColor"] if "floatBarColor" in kwargs else self.floatBarColor
         self.currentTab = kwargs["currentTab"] if "currentTab" in kwargs else self.currentTab
 
-        self.screenList = []
         # A list of the screens in the carousel.
-
-        # Remove any images which don't exist or are online if online is false
-        self.FloatBar = None
-        # The float bar object
-        self.carousel = None
-        # The carousel object
         self.screenList = []
+
+        # The float bar object
+        self.FloatBar = None
+
+        # The carousel object
+        self.carousel = None
+
         # A list containing all of the screens
-        self.CurrentMonth = date.today().month - 1  # It's table indices (0-11), not month count (1-12)
+        self.screenList = []
+
         # The current month
-        self.overrideTab = None
+        self.CurrentMonth = date.today().month - 1  # It's table indices (0-11), not month count (1-12)
+
         # Forces the tab to be used to be this one.
+        self.overrideTab = None
+
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
-        # Draw black background
+
+        # Remove any images which don't exist or are online if online is false
         for i in self.Images:
             if isinstance(i, (int, long)):
                 j = 0
@@ -251,18 +255,21 @@ class TabView(Widget):
 
 def showDate(self): # Pops up the datePicker, adding the widget when it's needed
     parent = self.parent
+    # Make sure to remove the old datePicker if it exists
     if hasattr(parent, "datePicker"):
         parent.remove_widget(parent.datePicker)
-    # Make sure to remove the old datePicker if it exists
     rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(date.today().month,
                                                                                         date.today().year) < 35 else 7
 
+    # The actual datePicker widget
     parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), parent.topBarSize * (rows+1)),
                                          pos=(Window.width / 2 - min(Window.width, Window.height) / 2,
                                               Window.height - parent.topBarSize * (rows+1)))
 
-    parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.child.SelectedDate)
     # Changes the date when the date is picked (The method is NYI, but it will work once it is)
+    parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.child.SelectedDate)
+
+    # Add the widget, so it shows up.
     parent.add_widget(parent.datePicker)
 
 
@@ -373,21 +380,20 @@ class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate 
         anim.start(self)
         # Changed lines come after here.
         if self.parent.overrideTab is None:  # If the tabs didn't trigger the move
-            if new_offset > 0:  # Let the carousel do its thing!
+            if new_offset > 0: # Let the carousel do its thing!
                 self.parent.currentTab = self.parent.screenNames.index(
                     self.next_slide.name) if self.next_slide is not None else self.parent.currentTab
-            elif new_offset < 0:
+            elif new_offset < 0: # If new_offset is 0, the slide has not changed.
                 self.parent.currentTab = self.parent.screenNames.index(
                     self.previous_slide.name) if self.previous_slide is not None else self.parent.currentTab
-                # If new_offset is 0, the slide has not changed.
         else:
             self.parent.currentTab = self.parent.overrideTab
             self.parent.overrideTab = None
-        self.parent._animateFloatBar(self.parent.currentTab, dur)
         # Yeah, this is accessing a protected member of a parent class. It's supposed to.
+        self.parent._animateFloatBar(self.parent.currentTab, dur)
 
 
-def genericResize(*args, **kwargs):  # Generic method to resize any objects with given function(s)
+def genericResize(*args, **kwargs):  # Generic method to resize any object(s) with given function(s)
     if isinstance(kwargs["objs"], (list, tuple)):
         for i in kwargs["objs"]:
             if isinstance(kwargs["fct"], (list, tuple)):

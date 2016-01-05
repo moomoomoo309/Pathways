@@ -39,12 +39,18 @@ class Calendar30Days(Widget):
         self.bind(size=self._resize)
         self.cols = 7
         self.rows = 7  # Extra row for dayNames
+
+        # The grid is 7x7 because 7x6 isn't enough for months which start on Saturday
         if self.MonthLength + self.MonthStart < 36:
             self.rows = 6
-        # The grid is 7x7 because 7x6 isn't enough for months which start on Saturday
+
         # Keep it within its bounds.
         self.spacing = 1
+
+        # Put the children in a gridLayout
         self.Layout = GridLayout(pos=self.pos, size=self.size, rows=self.rows, cols=self.cols, spacing=self.spacing)
+
+        # Populate the body and add the layout to the widget
         self.populate_body()
         self.add_widget(self.Layout)
 
@@ -72,6 +78,8 @@ class Calendar30Days(Widget):
 
         # Add all of the days
         for i in range(0, self.MonthLength):
+            # The group means they act as radio buttons, so only one is toggleable at a time.
+            # They will be changed to be normal buttons which switch to the day view with the date of the button.
             btn = ToggleButton(texture=None, background_normal="CalendarInactive.png",
                                background_down="CalendarActive.png", group="Calendar30Days",
                                text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]",
@@ -79,8 +87,6 @@ class Calendar30Days(Widget):
             btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
             # Keep text lined up on resize
             self.Layout.add_widget(btn)
-            # The group means they act as radio buttons, so only one is toggleable at a time.
-            # They will be changed to be normal buttons which switch to the day view with the date of the button.
 
         # Add filler days at the end of the month if necessary
         for i in range(0, self.rows * self.cols - self.MonthLength - self.MonthStart - 7):
@@ -90,12 +96,12 @@ class Calendar30Days(Widget):
                                      keep_ratio=False,
                                      on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
 
-    def _resize(self, *args):
+    def _resize(self, *args): # Propogate resize to children
         self.gridSize = (self.size[0] / self.cols, self.size[1] / self.rows)
         self.Layout.size = self.size
         self.Layout.pos = self.pos
 
-    def setDate(self, date):
+    def setDate(self, date): # Set the date to the given date
         self.MonthLength = monthrange(date.year, date.month)[1]
         self.MonthStart = (date.replace(day=1).weekday() + 1) % 7
         self.populate_body()
