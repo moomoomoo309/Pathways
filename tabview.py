@@ -6,6 +6,7 @@ from random import randint
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
@@ -19,7 +20,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 
 from Calendar import Calendar30Days
-from ColorUtils import PrimaryColor
+from ColorUtils import stringToTuple
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
 
 # Name of each month
@@ -31,7 +32,7 @@ MonthNames = ("January", "February", "March", "April", "May", "June", "July", "A
 class TabView(Widget):
     # Replace these with pictures of your choice.
     Images = DictProperty(
-        {10: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+            {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
               "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
               "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
               "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
@@ -55,9 +56,9 @@ class TabView(Widget):
     # How much of the tab bar should be taken up by the float bar
     floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
     # Color of the tab bar
-    tabBarColor = ListProperty(PrimaryColor)
+    tabBarColor = lambda x: stringToTuple(Config.get("Colors", "PrimaryColor"))
     # Color of the thin bar below the tabs on the tab bar
-    floatBarColor = ListProperty([.75, 0, 0, 1])
+    floatBarColor = lambda x: stringToTuple(Config.get("Colors", "PrimaryColor"))
     # The tab currently selected
     currentTab = BoundedNumericProperty(4, min=0)
 
@@ -72,8 +73,6 @@ class TabView(Widget):
         self.tabMargin = kwargs["tabMargin"] if "tabMargin" in kwargs else self.tabMargin
         self.numTabs = kwargs["numTabs"] if "numTabs" in kwargs else self.numTabs
         self.floatBarRatio = kwargs["floatBarRatio"] if "floatBarRatio" in kwargs else self.floatBarRatio
-        self.tabBarColor = kwargs["tabBarColor"] if "tabBarColor" in kwargs else self.tabBarColor
-        self.floatBarColor = kwargs["floatBarColor"] if "floatBarColor" in kwargs else self.floatBarColor
         self.currentTab = kwargs["currentTab"] if "currentTab" in kwargs else self.currentTab
 
         # A list of the screens in the carousel.
@@ -198,7 +197,7 @@ class TabView(Widget):
         self.topBarBackground.add(Rectangle(pos=self.pos, size=self.size))
         self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
                                             size=(self.size[0], self.topBarSize)))  # Draw the top bar
-        self.topBarBackground.add(Color(*self.tabBarColor))
+        self.topBarBackground.add(Color(*self.tabBarColor()[0:3]))
         self.topBarBackground.add(Rectangle(pos=(0, self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
                                             size=(self.size[0], self.tabSize)))  # Draw the tabs bar
         self.topBarBackground.add(Color(0, 0, 0))
@@ -227,11 +226,16 @@ class TabView(Widget):
 
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
-        self.FloatBar = AsyncImage(source="FloatBar.png",
+        self.FloatBar = AsyncImage(source="CalendarInactive.png",
                                    size=(self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio),
                                    pos=(self.currentTab * self.size[0] / self.numTabs,
                                         self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
-                                   allow_stretch=True, keep_ratio=False)
+                                   keep_ratio=False, allow_stretch=True)
+
+        # WIP changing color of floatbar.
+        self.FloatBar.overlay = InstructionGroup()
+        self.FloatBar.overlay.add(Color(*self.floatBarColor()))
+        self.FloatBar.canvas.add(self.FloatBar.overlay)
 
         self.add_widget(self.FloatBar)
         # Add the float bar
