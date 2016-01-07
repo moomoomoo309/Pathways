@@ -19,6 +19,7 @@ from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 
 from Calendar import Calendar30Days
+from ColorUtils import PrimaryColor
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
 
 # Name of each month
@@ -54,7 +55,7 @@ class TabView(Widget):
     # How much of the tab bar should be taken up by the float bar
     floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
     # Color of the tab bar
-    tabBarColor = ListProperty([1, 0, 0])
+    tabBarColor = ListProperty(PrimaryColor)
     # Color of the thin bar below the tabs on the tab bar
     floatBarColor = ListProperty([.75, 0, 0, 1])
     # The tab currently selected
