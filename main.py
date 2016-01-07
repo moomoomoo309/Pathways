@@ -7,17 +7,19 @@ from functools import partial
 from kivy.app import App
 from kivy.config import ConfigParser
 from kivy.core.window import Window
-from kivy.properties import BoundedNumericProperty
+from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen, ScreenManager, NoTransition
 from kivy.uix.settings import Settings, SettingItem
 from kivy.uix.slider import Slider
+from kivy.uix.colorpicker import ColorPicker
+from kivy.uix.widget import Widget
 
 from Calendar import Calendar30Days
-from DatePicker import shouldUseWhiteText
 from tabview import TabView, genericResize
+from ColorUtils import shouldUseWhiteText, PrimaryColor, PrimaryColors
 
 
 def makeCalWidget(self):  # Initializes the Calendar grid
@@ -49,12 +51,36 @@ class SettingSlider(SettingItem):
         # Update the setting from the label value
         self.label.bind(text=lambda self,newVal: setattr(self.parent.parent.parent, "value", int(newVal)))
 
+class SettingColorList(SettingItem):
+    value = StringProperty()
+    colors = PrimaryColors
+    realValue = ListProperty()
 
+    def __init__(self, **kwargs):
+        super(SettingColorList, self).__init__(**kwargs)
+        self.value = self.panel.get_value(self.section, self.key)
+        print(self.value)
+        for i in self.value.translate({ord(k): None for k in u' ()[]{}'}).split(","):
+            print(i)
+            self.realValue.append(float(i))
+        self.bind(realValue=lambda inst,val: setattr(self, "value", str(val)))
+        self.bind(realValue=updatePrimaryColor)
+        self.btn = Button(background_down="CalendarInactive.png", background_normal="CalendarInactive.png",
+                          background_color=self.realValue, size_hint_x=5)
+        self.btn.bind(background_color=lambda inst,val: setattr(self, "realValue", val))
+        self.add_widget(self.btn)
+        self.add_widget(Widget(size_hint_x=5))
+        for i in self.colors:
+            self.add_widget(Button(background_down="CalendarInactive.png", background_normal="CalendarInactive.png",
+                                   background_color=i, size_hint_x=5,
+                                   on_press=lambda inst: setattr(self.btn, "background_color", inst.background_color)))
+        print(self.children[0].children[0].children[0].size)
 
 
 class main(App):
-    layout = RelativeLayout()
     # This is here so things can be placed on the root widget if needed.
+    layout = RelativeLayout()
+
     def build(self):
         topBarSize = 75
         # Put the calendar on the Month view
@@ -106,20 +132,25 @@ class main(App):
 
         # Instantiate the settings menu
         settings = Settings()
-        # Add the slider to the settings menu; kivy does not implement one by default
+        # Add the slider and color picker to the settings menu; kivy does not implement them by default
         settings.register_type("slider", SettingSlider)
+        settings.register_type("colorList", SettingColorList)
 
         # When closing the settings menu, switch back to the app.
         settings.on_close = lambda: setattr(screenManager, "current", screenManager.screens[0].name)
+        settings.bind(on_on_close=updatePrimaryColor)
 
         # Write defaults to the config if it is missing any fields
         configParser = ConfigParser()
         configParser.read("Settings.cfg")
         configParser.adddefaultsection("Examples")
+        configParser.adddefaultsection("Real Settings")
         configParser.setdefault("Examples", "num", 0)
         configParser.setdefault("Examples", "numeric", 50)
         configParser.setdefault("Examples", "Checkbox", False)
         configParser.setdefault("Examples", "List", "Option 1")
+        configParser.setdefault("Real Settings", "Primary Color", PrimaryColor)
+        configParser.add_callback("Real Settings", "Primary Color", updatePrimaryColor)
         configParser.write()
         configParser.read("Settings.cfg")
 
@@ -129,6 +160,12 @@ class main(App):
         # Add the settings menu to the screen so it shows up
         settingsScreen.add_widget(settings)
         return screenManager
+
+
+def updatePrimaryColor(_,color):
+    global PrimaryColor
+    PrimaryColor = color
+
 
 if __name__ == "__main__":
     main().run()
