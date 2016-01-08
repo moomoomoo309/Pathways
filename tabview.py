@@ -2,16 +2,12 @@ from calendar import monthrange
 from datetime import date, datetime
 from os.path import isfile
 from random import randint
-
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
@@ -19,9 +15,15 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
+
 from Calendar import Calendar30Days
-from ColorUtils import stringToTuple
+from ColorUtils import stringToTuple, shouldUseWhiteText
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
+
 
 # Name of each month
 
@@ -142,6 +144,8 @@ class TabView(Widget):
                 i.size = [self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio]
                 i.pos = [self.currentTab * self.size[0] / self.numTabs,
                          self.size[1] - self.topBarSize - self.tabSize - self.tabMargin]
+                i.overlay.children[0].rgb = self.floatBarColor()[0:3]
+                i.overlay.children[0].a = .5
             elif i == self.MonthButton:
                 i.pos = (-1, self.size[1] - self.topBarSize)
                 i.size = (self.size[0], self.topBarSize)
@@ -211,9 +215,10 @@ class TabView(Widget):
         # Add text for tabs
         for i in range(0, self.numTabs):
             btn = Button(text_size=self._getTabButtonSize(), size=self._getTabButtonSize(),
-                         text="[color=ffffff][size=24]" + self.screenNames[i] + "[/size][/color]",
-                         background_color=(1, 1, 1, 0), pos=self._getTabButtonPos(i),
-                         markup=True, halign="center", valign="middle", on_press=self._switchCalScreen)
+                         text=("[color=ffffff]" if shouldUseWhiteText(self.tabBarColor())
+                               else "[color=000000]") + "[size=24]" + self.screenNames[i] + "[/size][/color]",
+                         background_color=(1, 1, 1, 0), pos=self._getTabButtonPos(i), markup=True, halign="center",
+                         valign="middle", on_press=self._switchCalScreen)
             btn.i = i
             self.add_widget(btn)
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
@@ -234,8 +239,14 @@ class TabView(Widget):
 
         # WIP changing color of floatbar.
         self.FloatBar.overlay = InstructionGroup()
-        self.FloatBar.overlay.add(Color(*self.floatBarColor()))
+        color = self.floatBarColor()
+        color[3] = .5
+        self.FloatBar.overlay.clear()
+        self.FloatBar.overlay.add(Color(*color))
+        self.FloatBar.overlay.add(Rectangle(pos=self.FloatBar.pos, size=self.FloatBar.size))
         self.FloatBar.canvas.add(self.FloatBar.overlay)
+        self.FloatBar.bind(pos=lambda inst, pos: setattr(self.FloatBar.overlay.children[2], "pos", pos))
+        self.FloatBar.bind(size=lambda inst, size: setattr(self.FloatBar.overlay.children[2], "size", size))
 
         self.add_widget(self.FloatBar)
         # Add the float bar
