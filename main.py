@@ -19,6 +19,7 @@ from kivy.uix.widget import Widget
 from Calendar import Calendar30Days
 from ColorUtils import shouldUseWhiteText, PrimaryColors
 from tabview import TabView, genericResize
+import Globals
 
 def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
@@ -81,7 +82,10 @@ class main(App):
     settings = None
 
     def build_config(self, config):
+        # Add a global section for the primary color and related functions
         Config.add_section("Colors")
+        Globals.redraw=[]
+
         # Instantiate the settings menu
         self.settings = Settings()
         # Add the slider and color picker to the settings menu; kivy does not implement them by default
@@ -165,6 +169,8 @@ class main(App):
 
 def updatePrimaryColor(_,color):
     Config.set("Colors", "PrimaryColor", color)
+    for i in Globals.redraw:
+        Globals.redraw[1](Globals.redraw[0])
 
 
 if __name__ == "__main__":
