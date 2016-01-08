@@ -23,7 +23,7 @@ from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty,
 from Calendar import Calendar30Days
 from ColorUtils import stringToTuple, shouldUseWhiteText
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
-
+import Globals
 
 # Name of each month
 
@@ -134,6 +134,7 @@ class TabView(Widget):
         for i in self.children:
             if isinstance(i, Button) and hasattr(i, "i") and i.i == self.currentTab:
                 self._switchCalScreen(i)
+        Globals.redraw=Globals.redraw+[self,redraw]
 
     # Redraw the whole thing on resize
     def resize(self, width, height):
@@ -267,6 +268,14 @@ class TabView(Widget):
     def changeDate(self, date):
         self.remove_widget(self.datePicker)
         # TODO: Actually change the date here
+
+def redraw(self):
+    self.canvas.ask_update()
+    for i in self.children:
+        if isinstance(i,Button) and i.text[0:7]=="[color=":
+            i.text=("[color=000000]" if not shouldUseWhiteText(self.tabBarColor()) else "[color=ffffff]")+i.text[14:]
+
+
 
 
 def showDate(self): # Pops up the datePicker, adding the widget when it's needed
