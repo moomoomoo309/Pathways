@@ -1,8 +1,9 @@
 from calendar import monthrange
 from datetime import date, timedelta
 from functools import partial
-from kivy.config import Config
+
 from kivy.app import App
+from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Canvas, Rectangle, Color
 from kivy.uix.boxlayout import BoxLayout
@@ -22,13 +23,15 @@ def getStartDay(month, year):
 
 
 class DatePicker(BoxLayout):
+    selectedButton = None
+
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__(**kwargs)
         self.bind(size=self.resize)
         self.bind(parent=lambda self, parent: self.populate_header())
 
         # This will eventually be implemented app-wide, not just here.
-        self.SelectedColor = stringToTuple(Config.get("Colors", "PrimaryColor"))
+        self.SelectedColor = lambda: stringToTuple(Config.get("Colors", "PrimaryColor"))
 
         # Default value is today
         self.SelectedDate = date.today()
@@ -82,35 +85,36 @@ class DatePicker(BoxLayout):
         self.parent.header.clear_widgets()
 
         # Left arrow
-        previous_month = Button(
+        self.PreviousMonth = Button(
             text="[color=000000][size=" + str(textSize) + "]<[/color][/size]" if not shouldUseWhiteText(
-                self.SelectedColor) else "[color=ffffff][size=" + str(textSize) + "]<[/color][/size]",
+                    self.SelectedColor()) else "[color=ffffff][size=" + str(textSize) + "]<[/color][/size]",
             on_press=partial(self.move_previous_month),
-            background_down="", background_normal="", background_color=self.SelectedColor,
+                background_down="", background_normal="", background_color=self.SelectedColor(),
             markup=True)
 
         # Right arrow
-        next_month = Button(text="[color=000000][size=" + str(textSize) + "]>[/color][/size]" if not shouldUseWhiteText(
-            self.SelectedColor) else "[color=ffffff][size=" + str(textSize) + "]>[/color][/size]",
-                            on_press=self.move_next_month,
-                            background_down="", background_normal="", background_color=self.SelectedColor, markup=True)
+        self.NextMonth = Button(
+            text="[color=000000][size=" + str(textSize) + "]>[/color][/size]" if not shouldUseWhiteText(
+                    self.SelectedColor()) else "[color=ffffff][size=" + str(textSize) + "]>[/color][/size]",
+            on_press=self.move_next_month,
+            background_down="", background_normal="", background_color=self.SelectedColor(), markup=True)
 
         # Label text
         month_year_text = self.month_names[self.date.month - 1] + ' ' + str(self.date.year)
 
         # Month button
-        current_month = Button(
+        self.CurrentMonth = Button(
             text="[color=000000][size=" + str(
                 textSize) + "]" + month_year_text + "[/color][/size]" if not shouldUseWhiteText(
-                self.SelectedColor) else "[color=ffffff][size=" + str(
+                    self.SelectedColor()) else "[color=ffffff][size=" + str(
                 textSize) + "]" + month_year_text + "[/color][/size]",
             markup=True, background_down="", background_normal="",
-            background_color=self.SelectedColor)
+                background_color=self.SelectedColor())
 
         # Add buttons to header
-        self.parent.header.add_widget(previous_month)
-        self.parent.header.add_widget(current_month)
-        self.parent.header.add_widget(next_month)
+        self.parent.header.add_widget(self.PreviousMonth)
+        self.parent.header.add_widget(self.CurrentMonth)
+        self.parent.header.add_widget(self.NextMonth)
 
     def populate_body(self, *args, **kwargs):
         # Text size, in pts
@@ -150,13 +154,16 @@ class DatePicker(BoxLayout):
 
             # If the current day is selected
             if self.SelectedDate == date_cursor:
+                # The currently selected date, so it can be recolored if the primary color changes
+                self.selectedButton = date_label
+
                 # Color it white if necessary
-                if shouldUseWhiteText(self.SelectedColor):
+                if shouldUseWhiteText(self.SelectedColor()):
                     date_label.text = "[color=ffffff]" + date_label.text[14:]
 
                 # Set it active by swapping the background
                 date_label.background_normal, date_label.background_down = date_label.background_down, date_label.background_normal
-                date_label.background_color = self.SelectedColor
+                date_label.background_color = self.SelectedColor()
 
             # Actually add the widget
             self.body.add_widget(date_label)

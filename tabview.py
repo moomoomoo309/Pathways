@@ -2,12 +2,16 @@ from calendar import monthrange
 from datetime import date, datetime
 from os.path import isfile
 from random import randint
+
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
@@ -15,15 +19,10 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
 
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
-
+import Globals
 from Calendar import Calendar30Days
 from ColorUtils import stringToTuple, shouldUseWhiteText
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
-import Globals
 
 # Name of each month
 
@@ -202,12 +201,18 @@ class TabView(Widget):
         self.topBarBackground.add(Rectangle(pos=self.pos, size=self.size))
         self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
                                             size=(self.size[0], self.topBarSize)))  # Draw the top bar
-        self.topBarBackground.add(Color(*self.tabBarColor()[0:3]))
+
+        # Color the top bar, in its own group so the color can be changed by the redraw function.
+
+        if not hasattr(self, "topBarBackgroundColor"):
+            self.topBarBackgroundColor = InstructionGroup()
+            self.topBarBackgroundColor.add(Color(*self.tabBarColor()[0:3]))
+
+        self.topBarBackground.add(self.topBarBackgroundColor)
+
         self.topBarBackground.add(Rectangle(pos=(0, self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
                                             size=(self.size[0], self.tabSize)))  # Draw the tabs bar
         self.topBarBackground.add(Color(0, 0, 0))
-
-        # Draw the top bar
 
     def _drawGui(self, Month):  # Draws the tab view (besides the boxes behind the buttons and label)
         self._drawTopBarBackground()
@@ -270,9 +275,31 @@ class TabView(Widget):
         # TODO: Actually change the date here
 
 def redraw(self):
-    self.canvas.ask_update()
+    self.topBarBackgroundColor.children[0].rgb = self.tabBarColor()
+    self.FloatBar.overlay.children[0].rgb = self.floatBarColor()
+    self.FloatBar.overlay.children[0].a = .5
+    if hasattr(self, "datePicker"):
+        self.datePicker.SelectedColor = self.tabBarColor()
+        for i in self.datePicker.header.children:
+            i.background_color = self.tabBarColor()
+        if self.datePicker.children[0].selectedButton is not None:
+            self.datePicker.children[0].selectedButton.background_color = self.tabBarColor()
+            self.datePicker.children[0].selectedButton.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
+                                                               else "[color=000000") + self.datePicker.children[
+                                                                                           0].selectedButton.text[13:]
+        self.datePicker.children[0].PreviousMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
+                                                          else "[color=000000") + self.datePicker.children[
+                                                                                      0].PreviousMonth.text[13:]
+
+        self.datePicker.children[0].CurrentMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
+                                                         else "[color=000000") + self.datePicker.children[
+                                                                                     0].CurrentMonth.text[13:]
+
+        self.datePicker.children[0].NextMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
+                                                      else "[color=000000") + self.datePicker.children[
+                                                                                  0].NextMonth.text[13:]
     for i in self.children:
-        if isinstance(i,Button) and i.text[0:7]=="[color=":
+        if isinstance(i, Button) and i != self.MonthButton and i.text[0:7] == "[color=":
             i.text=("[color=000000]" if not shouldUseWhiteText(self.tabBarColor()) else "[color=ffffff]")+i.text[14:]
 
 
