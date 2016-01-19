@@ -7,6 +7,8 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.image import Image
 from kivy.uix.button import Button
+from kivy.uix.togglebutton import ToggleButton
+from datetime import datetime
 
 class CalendarSingleDay(Widget):  # This will be very similar to CalendarLessThan30Days.
     pass
@@ -50,10 +52,14 @@ class CalendarLessThan30Days(Widget):
             self.outerLayout.add_widget(self.HourBar, len(self.outerLayout.children))
             self.HourBar.add_widget(Image(source="Circle3.png", allow_stretch=True, keep_ratio=False))  # Test Widget
         for i in range(self.days):
+            # Place your events using pos_hint and size_hint!
             self.dayList.append(RelativeLayout()) # Put a layout for each day, so the columns are separate.
             self.innerBodyLayout.add_widget(self.dayList[i])
-            self.dayList[i].add_widget(Button()) # Test Widget
+            self.dayList[i].add_widget(Button(size_hint_y=.5, pos_hint={"center_y": .75})) # Test Widget
         self.add_widget(self.outerLayout)
+
+def timeToPos(time): # Returns the time normalized between 0 and 1.
+    return (time.hour-1+time.minute/60)/24
 
 
 class MyApp(App):  # Test for the datePicker
