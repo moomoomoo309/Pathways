@@ -1,9 +1,7 @@
 from calendar import monthrange
 from datetime import date, timedelta
 from functools import partial
-
 from kivy.app import App
-from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Canvas, Rectangle, Color
 from kivy.uix.boxlayout import BoxLayout
@@ -11,7 +9,8 @@ from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.widget import Widget
 
-from ColorUtils import shouldUseWhiteText, stringToTuple
+import Globals
+from ColorUtils import shouldUseWhiteText
 
 
 def getMonthLength(month, year):
@@ -31,7 +30,7 @@ class DatePicker(BoxLayout):
         self.bind(parent=lambda self, parent: self.populate_header())
 
         # This will eventually be implemented app-wide, not just here.
-        self.SelectedColor = lambda: stringToTuple(Config.get("Colors", "PrimaryColor"))
+        self.SelectedColor = lambda: Globals.PrimaryColor
 
         # Default value is today
         self.SelectedDate = date.today()
@@ -308,7 +307,7 @@ class MyApp(App):  # Test for the datePicker
         # Test the widget
         widget = DatePickerWidget(size=Window.size)
 
-        # Propogate window resize to app
+        # Propagate window resize to app
         Window.bind(on_resize=lambda inst, width, height: setattr(widget, "size", inst.size))
         return widget
 

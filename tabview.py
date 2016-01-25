@@ -1,27 +1,26 @@
 from calendar import monthrange
 from datetime import date, datetime
-from os.path import isfile
-from random import randint
-
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
+from os.path import isfile
+from random import randint
+
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 
 import Globals
 from Calendar import Calendar30Days
-from ColorUtils import stringToTuple, shouldUseWhiteText
+from ColorUtils import shouldUseWhiteText
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
 
 # Name of each month
@@ -57,9 +56,9 @@ class TabView(Widget):
     # How much of the tab bar should be taken up by the float bar
     floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
     # Color of the tab bar
-    tabBarColor = lambda x: stringToTuple(Config.get("Colors", "PrimaryColor"))
+    tabBarColor = lambda x: Globals.PrimaryColor
     # Color of the thin bar below the tabs on the tab bar
-    floatBarColor = lambda x: stringToTuple(Config.get("Colors", "PrimaryColor"))
+    floatBarColor = lambda x: Globals.PrimaryColor
     # The tab currently selected
     currentTab = BoundedNumericProperty(4, min=0)
 
@@ -133,7 +132,7 @@ class TabView(Widget):
         for i in self.children:
             if isinstance(i, Button) and hasattr(i, "i") and i.i == self.currentTab:
                 self._switchCalScreen(i)
-        Globals.redraw=Globals.redraw+[self,redraw]
+        Globals.redraw = Globals.redraw + [self, redraw]
 
     # Redraw the whole thing on resize
     def resize(self, width, height):
@@ -454,6 +453,7 @@ def genericResize(*args, **kwargs):  # Generic method to resize any object(s) wi
                 i.size = kwargs["fct"]()
     else:
         kwargs["objs"].size = kwargs["fct"]()
+
 
 def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),

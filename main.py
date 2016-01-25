@@ -3,11 +3,8 @@ from __future__ import print_function
 import calendar
 from datetime import date, datetime
 from functools import partial
-
 from kivy.app import App
-from kivy.config import Config
 from kivy.core.window import Window
-from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.relativelayout import RelativeLayout
@@ -16,10 +13,12 @@ from kivy.uix.settings import Settings, SettingItem
 from kivy.uix.slider import Slider
 from kivy.uix.widget import Widget
 
+from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
+
+import Globals
 from Calendar import Calendar30Days
 from ColorUtils import shouldUseWhiteText, PrimaryColors
 from tabview import TabView, genericResize
-import Globals
 
 def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
@@ -73,7 +72,7 @@ class SettingColorList(SettingItem):
                                    on_press=lambda inst: setattr(self.btn, "background_color", inst.background_color)))
         global PrimaryColor
         PrimaryColor = self.realValue
-        Config.set("Colors", "PrimaryColor", PrimaryColor)
+        Globals.PrimaryColor = PrimaryColor
 
 
 class main(App):
@@ -82,9 +81,7 @@ class main(App):
     settings = None
 
     def build_config(self, config):
-        # Add a global section for the primary color and related functions
-        Config.add_section("Colors")
-        Globals.redraw=[]
+        Globals.redraw = []
 
         # Instantiate the settings menu
         self.settings = Settings()
@@ -168,7 +165,7 @@ class main(App):
 
 
 def updatePrimaryColor(_,color):
-    Config.set("Colors", "PrimaryColor", color)
+    Globals.PrimaryColor = color[0:3] + [1]
     for i in Globals.redraw:
         Globals.redraw[1](Globals.redraw[0])
 
