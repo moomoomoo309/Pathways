@@ -31,9 +31,9 @@ class CalendarLessThan30Days(Widget):
         super(CalendarLessThan30Days, self).__init__()
         # Propagate resize to children below
         self.bind(size=lambda inst, size: setattr(self.outerLayout, "size", size))
-        self.outerLayout.bind(size=lambda inst, size: setattr(self.innerLayout, "size", size))
-        self.innerLayout.bind(width=lambda inst, width: setattr(self.bodyLayout, "width", width))
-        self.bodyLayout.bind(size=lambda inst, size: setattr(self.bodyView, "size", size))
+        self.outerLayout.bind(width=lambda inst, width: setattr(self.innerLayout, "width", width))
+        self.innerLayout.bind(size=lambda inst, size: setattr(self.bodyView, "size", (size[0],Window.height*.8)))
+        self.bodyView.bind(width=lambda inst, width: setattr(self.bodyLayout, "width", width))
 
         # Forces the relativeLayout to size the dayBar to a constant(-ish) width
 
