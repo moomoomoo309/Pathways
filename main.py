@@ -16,7 +16,7 @@ from kivy.uix.widget import Widget
 from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
 
 import Globals
-from Calendar import Calendar30Days
+from Calendar import Calendar30Days, CalendarLessThan30Days
 from ColorUtils import shouldUseWhiteText, PrimaryColors
 from tabview import TabView, genericResize
 
@@ -111,6 +111,7 @@ class main(App):
         # Put the calendar on the Month view
         app = TabView(size=(Window.width, Window.height), randomImages=True, online=False, topBarSize=topBarSize)
         app.add_screen(makeCalWidget(app))
+        app.add_screen(CalendarLessThan30Days(days=7), 1)
 
         # When closing the settings menu, switch back to the app.
         self.settings.on_close = lambda: setattr(screenManager, "current", screenManager.screens[0].name)
