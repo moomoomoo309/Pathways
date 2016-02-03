@@ -22,10 +22,9 @@ def getStartDay(month, year):
 
 
 class DatePicker(BoxLayout):
-    selectedButton = None
-
     def __init__(self, *args, **kwargs):
         super(DatePicker, self).__init__(**kwargs)
+        self.selectedButton = None
         self.bind(size=self.resize)
         self.bind(parent=lambda self, parent: self.populate_header())
 
