@@ -39,8 +39,6 @@ class TabView(Widget):
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
 
-    # The name of all of the screens
-    screenNames = ListProperty(["Schedule", "1 Day", "3 Day", "Week", "Month"])
     # Use random images to fill the empty days of the calendar
     randomImages = BooleanProperty(False)
     # Get images from the internet
@@ -63,17 +61,9 @@ class TabView(Widget):
     currentTab = BoundedNumericProperty(4, min=0)
 
     def __init__(self, **kwargs):
-        super(TabView, self).__init__()  # I need this line for reasons.
-        # Set the properties above
-        self.screenNames = kwargs["screenNames"] if "screenNames" in kwargs else self.screenNames
-        self.randomImages = kwargs["randomImages"] if "randomImages" in kwargs else self.randomImages
-        self.online = kwargs["online"] if "online" in kwargs else self.online
-        self.topBarSize = kwargs["topBarSize"] if "topBarSize" in kwargs else self.topBarSize
-        self.tabSize = kwargs["tabSize"] if "tabSize" in kwargs else self.tabSize
-        self.tabMargin = kwargs["tabMargin"] if "tabMargin" in kwargs else self.tabMargin
-        self.numTabs = kwargs["numTabs"] if "numTabs" in kwargs else self.numTabs
-        self.floatBarRatio = kwargs["floatBarRatio"] if "floatBarRatio" in kwargs else self.floatBarRatio
-        self.currentTab = kwargs["currentTab"] if "currentTab" in kwargs else self.currentTab
+        super(TabView, self).__init__(**kwargs)  # I need this line for reasons.
+        # The name of all of the screens
+        self.screenNames = self.screenNames if hasattr(self,"screenNames") else ["Schedule", "1 Day", "3 Day", "Week", "Month"]
 
         # A list of the screens in the carousel.
         self.screenList = []
@@ -114,7 +104,7 @@ class TabView(Widget):
                             j += 1
         self.carousel = FloatCarousel(
             size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize),
-            direction="left", min_move=.05, screenNames=self.screenNames)
+            direction="left", min_move=.01, screenNames=self.screenNames)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=str(MonthNames[self.CurrentMonth])+" "+str(date.today().year))
@@ -132,7 +122,7 @@ class TabView(Widget):
         for i in self.children:
             if isinstance(i, Button) and hasattr(i, "i") and i.i == self.currentTab:
                 self._switchCalScreen(i)
-        Globals.redraw = Globals.redraw + [self, redraw]
+        Globals.redraw.append((self, redraw))
 
     # Redraw the whole thing on resize
     def resize(self, width, height):
