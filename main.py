@@ -112,6 +112,8 @@ class main(App):
         app = TabView(size=(Window.width, Window.height), randomImages=True, online=False, topBarSize=topBarSize)
         app.add_screen(makeCalWidget(app))
         app.add_screen(CalendarLessThan30Days(days=7), 1)
+        app.add_screen(CalendarLessThan30Days(days=3), 2)
+        app.add_screen(CalendarLessThan30Days(days=1), 3)
 
         # When closing the settings menu, switch back to the app.
         self.settings.on_close = lambda: setattr(screenManager, "current", screenManager.screens[0].name)
@@ -168,7 +170,7 @@ class main(App):
 def updatePrimaryColor(_,color):
     Globals.PrimaryColor = color[0:3] + [1]
     for i in Globals.redraw:
-        Globals.redraw[1](Globals.redraw[0])
+        i[1](i[0])
 
 
 if __name__ == "__main__":
