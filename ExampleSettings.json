@@ -31,5 +31,12 @@
       "Option 4",
       "Option 5"
     ]
+  },
+  {
+    "type": "colorList",
+    "title": "Primary Color",
+    "desc": "Color accent for the whole app",
+    "key": "Primary Color",
+    "section": "Real Settings"
   }
 ]

@@ -1,24 +1,26 @@
 from calendar import monthrange
 from datetime import date, datetime
-from os.path import isfile
-from random import randint
-
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
+from os.path import isfile
+from random import randint
 
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
+
+import Globals
 from Calendar import Calendar30Days
+from ColorUtils import shouldUseWhiteText
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
 
 # Name of each month
@@ -30,15 +32,13 @@ MonthNames = ("January", "February", "March", "April", "May", "June", "July", "A
 class TabView(Widget):
     # Replace these with pictures of your choice.
     Images = DictProperty(
-        {10: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+            {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
               "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
               "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
               "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
               "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
 
-    # The name of all of the screens
-    screenNames = ListProperty(["Schedule", "1 Day", "3 Day", "Week", "Month"])
     # Use random images to fill the empty days of the calendar
     randomImages = BooleanProperty(False)
     # Get images from the internet
@@ -54,26 +54,16 @@ class TabView(Widget):
     # How much of the tab bar should be taken up by the float bar
     floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
     # Color of the tab bar
-    tabBarColor = ListProperty([1, 0, 0])
+    tabBarColor = lambda x: Globals.PrimaryColor
     # Color of the thin bar below the tabs on the tab bar
-    floatBarColor = ListProperty([.75, 0, 0, 1])
+    floatBarColor = lambda x: Globals.PrimaryColor
     # The tab currently selected
     currentTab = BoundedNumericProperty(4, min=0)
 
     def __init__(self, **kwargs):
-        super(TabView, self).__init__()  # I need this line for reasons.
-        # Set the properties above
-        self.screenNames = kwargs["screenNames"] if "screenNames" in kwargs else self.screenNames
-        self.randomImages = kwargs["randomImages"] if "randomImages" in kwargs else self.randomImages
-        self.online = kwargs["online"] if "online" in kwargs else self.online
-        self.topBarSize = kwargs["topBarSize"] if "topBarSize" in kwargs else self.topBarSize
-        self.tabSize = kwargs["tabSize"] if "tabSize" in kwargs else self.tabSize
-        self.tabMargin = kwargs["tabMargin"] if "tabMargin" in kwargs else self.tabMargin
-        self.numTabs = kwargs["numTabs"] if "numTabs" in kwargs else self.numTabs
-        self.floatBarRatio = kwargs["floatBarRatio"] if "floatBarRatio" in kwargs else self.floatBarRatio
-        self.tabBarColor = kwargs["tabBarColor"] if "tabBarColor" in kwargs else self.tabBarColor
-        self.floatBarColor = kwargs["floatBarColor"] if "floatBarColor" in kwargs else self.floatBarColor
-        self.currentTab = kwargs["currentTab"] if "currentTab" in kwargs else self.currentTab
+        super(TabView, self).__init__(**kwargs)  # I need this line for reasons.
+        # The name of all of the screens
+        self.screenNames = self.screenNames if hasattr(self,"screenNames") else ["Schedule", "1 Day", "3 Day", "Week", "Month"]
 
         # A list of the screens in the carousel.
         self.screenList = []
@@ -114,7 +104,7 @@ class TabView(Widget):
                             j += 1
         self.carousel = FloatCarousel(
             size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize),
-            direction="left", min_move=.05, screenNames=self.screenNames)
+            direction="left", min_move=.01, screenNames=self.screenNames)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=str(MonthNames[self.CurrentMonth])+" "+str(date.today().year))
@@ -132,6 +122,7 @@ class TabView(Widget):
         for i in self.children:
             if isinstance(i, Button) and hasattr(i, "i") and i.i == self.currentTab:
                 self._switchCalScreen(i)
+        Globals.redraw.append((self, redraw))
 
     # Redraw the whole thing on resize
     def resize(self, width, height):
@@ -142,6 +133,8 @@ class TabView(Widget):
                 i.size = [self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio]
                 i.pos = [self.currentTab * self.size[0] / self.numTabs,
                          self.size[1] - self.topBarSize - self.tabSize - self.tabMargin]
+                i.overlay.children[0].rgb = self.floatBarColor()[0:3]
+                i.overlay.children[0].a = .5
             elif i == self.MonthButton:
                 i.pos = (-1, self.size[1] - self.topBarSize)
                 i.size = (self.size[0], self.topBarSize)
@@ -197,12 +190,18 @@ class TabView(Widget):
         self.topBarBackground.add(Rectangle(pos=self.pos, size=self.size))
         self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
                                             size=(self.size[0], self.topBarSize)))  # Draw the top bar
-        self.topBarBackground.add(Color(*self.tabBarColor))
+
+        # Color the top bar, in its own group so the color can be changed by the redraw function.
+
+        if not hasattr(self, "topBarBackgroundColor"):
+            self.topBarBackgroundColor = InstructionGroup()
+            self.topBarBackgroundColor.add(Color(*self.tabBarColor()[0:3]))
+
+        self.topBarBackground.add(self.topBarBackgroundColor)
+
         self.topBarBackground.add(Rectangle(pos=(0, self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
                                             size=(self.size[0], self.tabSize)))  # Draw the tabs bar
         self.topBarBackground.add(Color(0, 0, 0))
-
-        # Draw the top bar
 
     def _drawGui(self, Month):  # Draws the tab view (besides the boxes behind the buttons and label)
         self._drawTopBarBackground()
@@ -211,9 +210,10 @@ class TabView(Widget):
         # Add text for tabs
         for i in range(0, self.numTabs):
             btn = Button(text_size=self._getTabButtonSize(), size=self._getTabButtonSize(),
-                         text="[color=ffffff][size=24]" + self.screenNames[i] + "[/size][/color]",
-                         background_color=(1, 1, 1, 0), pos=self._getTabButtonPos(i),
-                         markup=True, halign="center", valign="middle", on_press=self._switchCalScreen)
+                         text=("[color=ffffff]" if shouldUseWhiteText(self.tabBarColor())
+                               else "[color=000000]") + "[size=24]" + self.screenNames[i] + "[/size][/color]",
+                         background_color=(1, 1, 1, 0), pos=self._getTabButtonPos(i), markup=True, halign="center",
+                         valign="middle", on_press=self._switchCalScreen)
             btn.i = i
             self.add_widget(btn)
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
@@ -226,11 +226,22 @@ class TabView(Widget):
 
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
-        self.FloatBar = AsyncImage(source="FloatBar.png",
+        self.FloatBar = AsyncImage(source="CalendarInactive.png",
                                    size=(self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio),
                                    pos=(self.currentTab * self.size[0] / self.numTabs,
                                         self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
-                                   allow_stretch=True, keep_ratio=False)
+                                   keep_ratio=False, allow_stretch=True)
+
+        # WIP changing color of floatbar.
+        self.FloatBar.overlay = InstructionGroup()
+        color = self.floatBarColor()
+        color[3] = .5
+        self.FloatBar.overlay.clear()
+        self.FloatBar.overlay.add(Color(*color))
+        self.FloatBar.overlay.add(Rectangle(pos=self.FloatBar.pos, size=self.FloatBar.size))
+        self.FloatBar.canvas.add(self.FloatBar.overlay)
+        self.FloatBar.bind(pos=lambda inst, pos: setattr(self.FloatBar.overlay.children[2], "pos", pos))
+        self.FloatBar.bind(size=lambda inst, size: setattr(self.FloatBar.overlay.children[2], "size", size))
 
         self.add_widget(self.FloatBar)
         # Add the float bar
@@ -251,6 +262,36 @@ class TabView(Widget):
     def changeDate(self, date):
         self.remove_widget(self.datePicker)
         # TODO: Actually change the date here
+
+def redraw(self):
+    self.topBarBackgroundColor.children[0].rgb = self.tabBarColor()
+    self.FloatBar.overlay.children[0].rgb = self.floatBarColor()
+    self.FloatBar.overlay.children[0].a = .5
+    if hasattr(self, "datePicker"):
+        self.datePicker.SelectedColor = self.tabBarColor()
+        for i in self.datePicker.header.children:
+            i.background_color = self.tabBarColor()
+        if self.datePicker.children[0].selectedButton is not None:
+            self.datePicker.children[0].selectedButton.background_color = self.tabBarColor()
+            self.datePicker.children[0].selectedButton.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
+                                                               else "[color=000000") + self.datePicker.children[
+                                                                                           0].selectedButton.text[13:]
+        self.datePicker.children[0].PreviousMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
+                                                          else "[color=000000") + self.datePicker.children[
+                                                                                      0].PreviousMonth.text[13:]
+
+        self.datePicker.children[0].CurrentMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
+                                                         else "[color=000000") + self.datePicker.children[
+                                                                                     0].CurrentMonth.text[13:]
+
+        self.datePicker.children[0].NextMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
+                                                      else "[color=000000") + self.datePicker.children[
+                                                                                  0].NextMonth.text[13:]
+    for i in self.children:
+        if isinstance(i, Button) and i != self.MonthButton and i.text[0:7] == "[color=":
+            i.text=("[color=000000]" if not shouldUseWhiteText(self.tabBarColor()) else "[color=ffffff]")+i.text[14:]
+
+
 
 
 def showDate(self): # Pops up the datePicker, adding the widget when it's needed
@@ -402,6 +443,7 @@ def genericResize(*args, **kwargs):  # Generic method to resize any object(s) wi
                 i.size = kwargs["fct"]()
     else:
         kwargs["objs"].size = kwargs["fct"]()
+
 
 def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
