@@ -20,7 +20,7 @@ from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty,
 
 import Globals
 from Calendar import Calendar30Days
-from ColorUtils import shouldUseWhiteText
+from ColorUtils import shouldUseWhiteText, Gradient
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
 
 # Name of each month
@@ -32,12 +32,12 @@ MonthNames = ("January", "February", "March", "April", "May", "June", "July", "A
 class TabView(Widget):
     # Replace these with pictures of your choice.
     Images = DictProperty(
-            {9: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
-              "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
-              "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
-              "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
-              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
-              "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
+        {1: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+             "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
+             "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
+             "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
+             "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
+             "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
 
     # Use random images to fill the empty days of the calendar
     randomImages = BooleanProperty(False)
@@ -63,7 +63,9 @@ class TabView(Widget):
     def __init__(self, **kwargs):
         super(TabView, self).__init__(**kwargs)  # I need this line for reasons.
         # The name of all of the screens
-        self.screenNames = self.screenNames if hasattr(self,"screenNames") else ["Schedule", "1 Day", "3 Day", "Week", "Month"]
+        self.screenNames = self.screenNames if hasattr(self, "screenNames") else ["Schedule", "1 Day", "3 Day", "Week",
+                                                                                  "Month"]
+
 
         # A list of the screens in the carousel.
         self.screenList = []
@@ -107,7 +109,7 @@ class TabView(Widget):
             direction="left", min_move=.01, screenNames=self.screenNames)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
-        self._drawGui(Month=str(MonthNames[self.CurrentMonth])+" "+str(date.today().year))
+        self._drawGui(Month=str(MonthNames[self.CurrentMonth]) + " " + str(date.today().year))
         # Draw the top bar
         for i in range(self.numTabs - 1, -1, -1):
             testScreen = Screen(name=self.screenNames[i],
@@ -190,7 +192,6 @@ class TabView(Widget):
         self.topBarBackground.add(Rectangle(pos=self.pos, size=self.size))
         self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
                                             size=(self.size[0], self.topBarSize)))  # Draw the top bar
-
         # Color the top bar, in its own group so the color can be changed by the redraw function.
 
         if not hasattr(self, "topBarBackgroundColor"):
@@ -235,7 +236,10 @@ class TabView(Widget):
         # WIP changing color of floatbar.
         self.FloatBar.overlay = InstructionGroup()
         color = self.floatBarColor()
-        color[3] = .5
+        if len(color) == 3:
+            color.append(.5)
+        else:
+            color[3] = .5
         self.FloatBar.overlay.clear()
         self.FloatBar.overlay.add(Color(*color))
         self.FloatBar.overlay.add(Rectangle(pos=self.FloatBar.pos, size=self.FloatBar.size))
@@ -263,6 +267,7 @@ class TabView(Widget):
         self.remove_widget(self.datePicker)
         # TODO: Actually change the date here
 
+
 def redraw(self):
     self.topBarBackgroundColor.children[0].rgb = self.tabBarColor()
     self.FloatBar.overlay.children[0].rgb = self.floatBarColor()
@@ -289,12 +294,11 @@ def redraw(self):
                                                                                   0].NextMonth.text[13:]
     for i in self.children:
         if isinstance(i, Button) and i != self.MonthButton and i.text[0:7] == "[color=":
-            i.text=("[color=000000]" if not shouldUseWhiteText(self.tabBarColor()) else "[color=ffffff]")+i.text[14:]
+            i.text = ("[color=000000]" if not shouldUseWhiteText(self.tabBarColor()) else "[color=ffffff]") + i.text[
+                                                                                                              14:]
 
 
-
-
-def showDate(self): # Pops up the datePicker, adding the widget when it's needed
+def showDate(self):  # Pops up the datePicker, adding the widget when it's needed
     parent = self.parent
     # Make sure to remove the old datePicker if it exists
     if hasattr(parent, "datePicker"):
@@ -303,9 +307,9 @@ def showDate(self): # Pops up the datePicker, adding the widget when it's needed
                                                                                         date.today().year) < 35 else 7
 
     # The actual datePicker widget
-    parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), parent.topBarSize * (rows+1)),
+    parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), parent.topBarSize * (rows + 1)),
                                          pos=(Window.width / 2 - min(Window.width, Window.height) / 2,
-                                              Window.height - parent.topBarSize * (rows+1)))
+                                              Window.height - parent.topBarSize * (rows + 1)))
 
     # Changes the date when the date is picked (The method is NYI, but it will work once it is)
     parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.child.SelectedDate)
@@ -421,10 +425,10 @@ class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate 
         anim.start(self)
         # Changed lines come after here.
         if self.parent.overrideTab is None:  # If the tabs didn't trigger the move
-            if new_offset > 0: # Let the carousel do its thing!
+            if new_offset > 0:  # Let the carousel do its thing!
                 self.parent.currentTab = self.parent.screenNames.index(
                     self.next_slide.name) if self.next_slide is not None else self.parent.currentTab
-            elif new_offset < 0: # If new_offset is 0, the slide has not changed.
+            elif new_offset < 0:  # If new_offset is 0, the slide has not changed.
                 self.parent.currentTab = self.parent.screenNames.index(
                     self.previous_slide.name) if self.previous_slide is not None else self.parent.currentTab
         else:
