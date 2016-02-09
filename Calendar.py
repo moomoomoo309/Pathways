@@ -70,8 +70,8 @@ class Calendar30Days(Widget):
         for i in range(7):
             btn = Button(texture=None, background_normal="CalendarInactive.png",
                          background_down="CalendarActive.png",
-                         # Used the first letter of each dayName
-                         text="[color=000000][size=36]" + dayNames[i][0] + "[/color][/size]",
+                         # Used the first three letters of each dayName
+                         text="[color=000000][size=24]" + dayNames[i][0:3] + "[/color][/size]",
                          markup=True, halign="center", valign="middle", text_size=self.gridSize)
             btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
             # Keep the text_size correct so the text lines up correctly on resize
@@ -168,7 +168,7 @@ class CalendarLessThan30Days(Widget):
         if self.days > 1:  # Add the hour bar if it's not one day
             self.outerLayout.add_widget(self.dayBarLayout, len(self.outerLayout.children))
             # This button has the current week of the year
-            self.weekButton = Button(text=str(self.startDate.isocalendar()[1]), size_hint_x=None, color=(0, 0, 0, 1),
+            self.weekButton = Button(text=str(self.originalStartDate.isocalendar()[1]), size_hint_x=None, color=(0, 0, 0, 1),
                                      background_normal="CalendarActive.png", background_down="CalendarActive.png")
             self.hourBar.bind(width=lambda inst, width: setattr(self.weekButton, "width", width))
             self.dayBarLayout.add_widget(self.weekButton)
