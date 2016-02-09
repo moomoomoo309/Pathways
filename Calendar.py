@@ -63,17 +63,17 @@ class Calendar30Days(Widget):
 
     def populate_body(self):
         self.Layout.clear_widgets()
-        self.gridSize = (self.size[0] / self.cols, self.size[1] / self.rows)
+        self.gridSize = (self.size[0] / self.cols, self.size[1] / (self.rows-1+.8685)) # The size of each day
 
         # Add the names of the days of the week
         dayNames = ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
         for i in range(7):
             btn = Button(texture=None, background_normal="CalendarInactive.png",
-                         background_down="CalendarActive.png",
-                         # Used the first three letters of each dayName
-                         text="[color=000000][size=24]" + dayNames[i][0:3] + "[/color][/size]",
-                         markup=True, halign="center", valign="middle", text_size=self.gridSize)
-            btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
+                         background_down="CalendarActive.png", height=self.height*(1-.8685), size_hint_y=None,
+                         # Used the first letter of each dayName
+                         text="[color=000000][size=36]" + dayNames[i][0:3] + "[/color][/size]",
+                         markup=True, halign="center", valign="middle", text_size=(self.gridSize[0],self.gridSize[1]*2/3))
+            btn.bind(size=lambda btn, newVal: setattr(btn, "text_size", newVal))
             # Keep the text_size correct so the text lines up correctly on resize
             self.Layout.add_widget(btn)
         for i in range(0, self.MonthStart):
@@ -104,7 +104,7 @@ class Calendar30Days(Widget):
                                  on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
 
     def _resize(self, *args):  # Propogate resize to children
-        self.gridSize = (self.size[0] / self.cols, self.size[1] / self.rows)
+        self.gridSize = (self.size[0] / self.cols, self.size[1] / (self.rows-2./3))
         self.Layout.size = self.size
         self.Layout.pos = self.pos
 
