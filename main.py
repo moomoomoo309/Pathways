@@ -128,19 +128,20 @@ class main(App):
 		self.settings.on_close = lambda: setattr(screenManager, "current", screenManager.screens[0].name)
 
 		# Make screens for the app itself and the settings menu
-		appScreen = Screen(name="App")
+		self.appScreen = Screen(name="App")
+		self.appScreen.gradient = True
 		rectHeight = 20
-		appScreen.canvas.after.add(
+		self.appScreen.canvas.after.add(
 			Rectangle(pos=(0, 0), size=(app.width, rectHeight), texture=Gradient.vertical((0, 0, 0, .5), (0, 0, 0, 0))))
 
-		appScreen.bind(size=lambda inst, size: setattr(
-			appScreen.canvas.after.children[len(appScreen.canvas.after.children) - 1], "size",
-			(appScreen.width, rectHeight)))
-		appScreen.bind(size=lambda inst, size:
-		setattr(appScreen.canvas.after.children[len(appScreen.canvas.after.children) - 1], "pos",
-		        (0, appScreen.height - rectHeight - app.tabSize * app.floatBarRatio - app.topBarSize - app.tabMargin -
-		         app.tabSize * (1 - app.floatBarRatio))))
-
+		self.appScreen.bind(size=lambda inst, size: setattr(
+			self.appScreen.canvas.after.children[len(self.appScreen.canvas.after.children) - 1], "size",
+			(self.appScreen.width, rectHeight)))
+		self.appScreen.bind(size=lambda inst, size:
+		setattr(self.appScreen.canvas.after.children[len(self.appScreen.canvas.after.children) - 1], "pos",
+		        (-100000, -100000) if not inst.gradient else (0,
+		                                                      self.appScreen.height - rectHeight - app.tabSize * app.floatBarRatio - app.topBarSize - app.tabMargin -
+		                                                      app.tabSize * (1 - app.floatBarRatio))))
 		settingsScreen = Screen(name="Settings")
 
 		# Resize the settings menu on window resize
@@ -156,14 +157,14 @@ class main(App):
 		screenManager.bind(size=partial(genericResize, objs=screenManager.children, fct=lambda: Window.size))
 
 		# Add screens into screen manager
-		screenManager.add_widget(appScreen)
+		screenManager.add_widget(self.appScreen)
 		screenManager.add_widget(settingsScreen)
 
 		# Add the app into the screen so it actually shows up
-		appScreen.add_widget(app)
+		self.appScreen.add_widget(app)
 
 		# Propogate resize to all children
-		appScreen.bind(size=partial(genericResize, objs=app, fct=lambda: Window.size))
+		self.appScreen.bind(size=partial(genericResize, objs=app, fct=lambda: Window.size))
 
 		# Button to go to the settings screen, changes color depending on what's behind it
 		settingsButton = Button(pos=(Window.width - topBarSize, Window.height - topBarSize),
@@ -180,7 +181,7 @@ class main(App):
 		                                                  (Window.width - topBarSize, Window.height - topBarSize)))
 
 		# Add the button to switch to the settings screen within the app
-		appScreen.add_widget(settingsButton)
+		self.appScreen.add_widget(settingsButton)
 
 		# Add the settings menu to the screen so it shows up
 		settingsScreen.add_widget(self.settings)
