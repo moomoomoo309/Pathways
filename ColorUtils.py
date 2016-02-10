@@ -1,5 +1,11 @@
+from kivy.graphics.texture import Texture
+from kivy.uix.screenmanager import Screen
+
 # A sample of colors from https://www.google.com/design/spec/style/color.html
 PrimaryColors = (
+    (0.62, 0.62, 0.62, 1),
+    (0.38, 0.49, 0.55, 1),
+    (0.47, 0.33, 0.28, 1),
     (0.957, 0.263, 0.212, 1),
     (0.914, 0.118, 0.388, 1),
     (0.612, 0.153, 0.69, 1),
@@ -14,7 +20,7 @@ PrimaryColors = (
     (0.804, 0.863, 0.224, 1),
     (1, 0.922, 0.231, 1),
     (1, 0.757, 0.027, 1),
-    (1, 0.596, 0, 1),
+    (1, 0.596, 0, 1)
 )
 
 
@@ -24,8 +30,21 @@ def shouldUseWhiteText(color):
     return 0.2126 * fct(color[0]) + 0.7152 * fct(color[1]) + 0.0722 * fct(color[2]) < 0.179
 
 
-def stringToTuple(str):
-    returnVal = []
-    for i in str.translate({ord(k): None for k in u' ()[]{}'}).split(","):
-        returnVal.append(float(i))
-    return returnVal
+class Gradient(object):
+    @staticmethod
+    def horizontal(rgba_left, rgba_right):
+        texture = Texture.create(size=(2, 1), colorfmt="rgba")
+        pixels = rgba_left + rgba_right
+        pixels = [chr(int(v * 255)) for v in pixels]
+        buf = ''.join(pixels)
+        texture.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
+        return texture
+
+    @staticmethod
+    def vertical(rgba_top, rgba_bottom):
+        texture = Texture.create(size=(1, 2), colorfmt="rgba")
+        pixels = rgba_bottom + rgba_top
+        pixels = [chr(int(v * 255)) for v in pixels]
+        buf = ''.join(pixels)
+        texture.blit_buffer(buf, colorfmt='rgba', bufferfmt='ubyte')
+        return texture
