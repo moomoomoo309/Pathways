@@ -20,7 +20,7 @@ from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty,
 
 import Globals
 from Calendar import Calendar30Days
-from ColorUtils import shouldUseWhiteText, Gradient
+from ColorUtils import shouldUseWhiteText
 from DatePicker import DatePickerWidget, getMonthLength, getStartDay
 
 # Name of each month
@@ -66,6 +66,7 @@ class TabView(Widget):
         self.screenNames = self.screenNames if hasattr(self, "screenNames") else ["Schedule", "1 Day", "3 Day", "Week",
                                                                                   "Month"]
 
+        self.date=date.today()
 
         # A list of the screens in the carousel.
         self.screenList = []
@@ -264,8 +265,14 @@ class TabView(Widget):
         return "CalendarInactive.png"
 
     def changeDate(self, date):
+        showGradient(self)
         self.remove_widget(self.datePicker)
-        # TODO: Actually change the date here
+        for i in self.carousel.current_slide.children:
+            if i.__class__.__name__[0:len("Calendar")]=="Calendar":
+                i.changeDate(date)
+        self.date=date
+        self.MonthButton.text = self.MonthButton.text[0:len("[color=000000][size=XX]")] + MonthNames[date.month-1] + " " +\
+                                str(date.year) + "[/size][/color]"
 
 
 def redraw(self):
@@ -308,11 +315,13 @@ def showDate(self):  # Pops up the datePicker, adding the widget when it's neede
 
     # The actual datePicker widget
     parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), parent.topBarSize * (rows + 1)),
-                                         pos=(Window.width / 2 - min(Window.width, Window.height) / 2,
+                                         date=parent.date, pos=(Window.width / 2 - min(Window.width, Window.height) / 2,
                                               Window.height - parent.topBarSize * (rows + 1)))
 
-    # Changes the date when the date is picked (The method is NYI, but it will work once it is)
-    parent.datePicker.dismiss = partial(parent.changeDate, date=parent.datePicker.child.SelectedDate)
+    # Changes the date when the date is picked
+    parent.datePicker.dismiss = parent.changeDate
+
+    hideGradient(self)
 
     # Add the widget, so it shows up.
     parent.add_widget(parent.datePicker)
@@ -454,6 +463,28 @@ def makeCalWidget(self):  # Initializes the Calendar grid
                           MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
                           size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
                           online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
+
+def hideGradient(self):
+    screen = self
+    while screen.parent is not None and not isinstance(screen,Screen):
+        screen = screen.parent
+    screen.gradient = False
+    screen.canvas.after.children[len(screen.canvas.after.children)-1].pos = (-100000, -100000)
+
+
+def showGradient(self):
+    screen = self
+    app = None
+    while screen.parent is not None and not isinstance(screen,Screen):
+        if isinstance(screen,TabView):
+            app = screen
+        screen = screen.parent
+    screen.gradient = False
+    rectHeight=20
+    screen.canvas.after.children[len(screen.canvas.after.children)-1].pos = (0, screen.height - rectHeight -
+                                                                         app.tabSize * app.floatBarRatio -
+                                                                         app.topBarSize - app.tabMargin - app.tabSize *
+                                                                         (1 - app.floatBarRatio))
 
 
 class tabview(App):
