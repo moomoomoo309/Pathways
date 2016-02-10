@@ -32,8 +32,8 @@ class DatePicker(BoxLayout):
         self.SelectedColor = lambda: Globals.PrimaryColor
 
         # Default value is today
-        self.SelectedDate = date.today()
-        self.date = date.today()
+        self.SelectedDate = kwargs["date"] if "date" in kwargs else date.today()
+        self.date = kwargs["date"] if "date" in kwargs else date.today()
 
         # Set up layout
         self.orientation = "vertical"
@@ -175,7 +175,7 @@ class DatePicker(BoxLayout):
         if "btn" in kwargs and self.SelectedDate.month == self.date.month and self.SelectedDate.year == self.date.year \
                 and int(kwargs["btn"].text[23:kwargs["btn"].text[23:].find("[") + 23]) == self.SelectedDate.day:
             # Dismiss the datePicker
-            self.parent.dismiss()
+            self.parent.dismiss(self.SelectedDate)
 
         # Otherwise, just set the date to the clicked date
         self.date = date(self.date.year, self.date.month, kwargs['day'])
@@ -259,7 +259,7 @@ class DatePickerWidget(Widget):
 
         # The actual datePicker
         self.child = DatePicker(size=(self.originalWidth, self.height * rows / (rows + 1)),
-                                pos=(self.originalX, self.pos[1]), wdg=self)
+                                pos=(self.originalX, self.pos[1]), wdg=self, date=kwargs["date"])
         self.add_widget(self.child)
 
         # Background will fill the whole width
