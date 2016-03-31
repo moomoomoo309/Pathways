@@ -1,22 +1,22 @@
 from calendar import monthrange
 from datetime import date, datetime
+from os.path import isfile
+from random import randint
+
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
-from os.path import isfile
-from random import randint
-
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, ListProperty, BooleanProperty, DictProperty, partial
 
 import Globals
 from Calendar import Calendar30Days
@@ -267,9 +267,10 @@ class TabView(Widget):
     def changeDate(self, date):
         showGradient(self)
         self.remove_widget(self.datePicker)
-        for i in self.carousel.current_slide.children:
-            if i.__class__.__name__[0:len("Calendar")]=="Calendar":
-                i.changeDate(date)
+        for i in self.screenList:
+            if hasattr(i.children[0], "changeDate"):
+                i.children[0].changeDate(date)
+
         self.date=date
         self.MonthButton.text = self.MonthButton.text[0:len("[color=000000][size=XX]")] + MonthNames[date.month-1] + " " +\
                                 str(date.year) + "[/size][/color]"

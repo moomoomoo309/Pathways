@@ -1,21 +1,20 @@
 from calendar import monthrange
 from datetime import date, timedelta
+from datetime import datetime
 
+from kivy.core.window import Window
+from kivy.graphics import Rectangle, Color
 from kivy.properties import BooleanProperty, BoundedNumericProperty, ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
-from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
-from kivy.core.window import Window
-from datetime import datetime
-from Event import Event
-from kivy.graphics import Rectangle, Color
 
-from AsyncImageButton import AsyncImageButton
 import Globals
+from AsyncImageButton import AsyncImageButton
+from Event import Event
 
 
 class Calendar30Days(Widget):
@@ -33,13 +32,14 @@ class Calendar30Days(Widget):
     MonthStart = BoundedNumericProperty(0, min=0, max=6)
     # The size of each element in the grid
     gridSize = 0
+    # The date selected
+    selectedDate = ObjectProperty(date.today())
 
     def __init__(self, **kwargs):
         super(Calendar30Days, self).__init__(**kwargs)  # I need this line for reasons.
 
         self.getImageSource = kwargs["getImageSource"] if "getImageSource" in kwargs else lambda x: ""
-        if self.startDate is not None:
-            self.changeDate(self.startDate)
+        self.bind(selectedDate=lambda self, date: self.changeDate(date))
         self.bind(size=self._resize)
         self.cols = 7
         self.rows = 7  # Extra row for dayNames
@@ -83,13 +83,13 @@ class Calendar30Days(Widget):
 
         # Add all of the days
         for i in range(0, self.MonthLength):
-            # The group means they act as radio buttons, so only one is toggleable at a time.
-            # They will be changed to be normal buttons which switch to the day view with the date of the button.
-            btn = ToggleButton(texture=None, background_normal="CalendarInactive.png",
-                               background_down="CalendarActive.png", group="Calendar30Days",
-                               text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]",
-                               markup=True, halign="left", valign="top", text_size=self.gridSize)
+            btn = Button(texture=None, background_normal="CalendarInactive.png",
+                         background_down="CalendarActive.png",
+                         text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]",
+                         markup=True, halign="left", valign="top", text_size=self.gridSize)
             btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
+            if self.startDate + timedelta(days=i) == self.selectedDate:
+                btn.background_color = Globals.PrimaryColor
             # Keep text lined up on resize
             self.Layout.add_widget(btn)
 
@@ -107,12 +107,12 @@ class Calendar30Days(Widget):
         self.Layout.pos = self.pos
 
     def changeDate(self, date):  # Set the date to the given date
-        if date.month != self.startDate.month:
-            date = date.replace(day=1)
-            self.startDate = date
-            self.MonthLength = monthrange(date.year, date.month)[1]
-            self.MonthStart = (date.replace(day=1).weekday() + 1) % 7
-            self.populate_body()
+        self.selectedDate = date
+        date = date.replace(day=1)
+        self.startDate = date
+        self.MonthLength = monthrange(date.year, date.month)[1]
+        self.MonthStart = (date.replace(day=1).weekday() + 1) % 7
+        self.populate_body()
 
 
 class CalendarLessThan30Days(Widget):
@@ -120,17 +120,10 @@ class CalendarLessThan30Days(Widget):
     days = BoundedNumericProperty(7, min=1, max=7)
     # Height of each event
     eventHeight = 65
-    startDate = ObjectProperty(date.today())
+    originalStartDate = ObjectProperty(date.today())
 
     def __init__(self, **kwargs):
         super(CalendarLessThan30Days, self).__init__(**kwargs)
-        # Original date, used later
-        self.originalStartDate = self.startDate
-        # If it's 7 days, start on sunday, otherwise put it in the middle
-        if self.days == 7:
-            self.startDate -= timedelta(days=self.startDate.isoweekday())
-        else:
-            self.startDate -= timedelta(days=self.days // 2)
         self.dayBarLayout = GridLayout(rows=1, spacing=1,
                                        size_hint_y=.15)  # Layout for the dayBar, if it exists, and body
         self.dayList = []  # Has layout for each day
@@ -164,17 +157,29 @@ class CalendarLessThan30Days(Widget):
             # Resize text_size to the text is aligned correctly
             lbl.bind(size=lambda inst, size: setattr(lbl, "text_size", size))
             self.hourBar.add_widget(lbl)
+        self.changeDate(self.originalStartDate)
+        self.bind(originalStartDate=lambda self, date: self.changeDate(date))
 
+        # Adding layout structure below...
+        self.add_widget(self.outerLayout)
+        self.outerLayout.add_widget(self.innerLayout)
+        self.innerLayout.add_widget(self.bodyView)
+        self.bodyView.add_widget(self.bodyLayout)
+        self.bodyLayout.add_widget(self.hourBar)
+        self.bodyLayout.add_widget(self.innerBodyLayout)
+
+    def changeDate(self, date):
+        self.originalStartDate = date
+        self.startDate = self.originalStartDate
+        # If it's 7 days, start on sunday, otherwise put it in the middle
+        if self.days == 7:
+            self.startDate -= timedelta(days=self.startDate.isoweekday())
+        else:
+            self.startDate -= timedelta(days=self.days // 2)
         WidgetsToAddOnAGivenDay = []  # This is for demo purposes, it will be replaced with a central event storage.
-        if self.days > 1:  # Add the hour bar if it's not one day
-            self.outerLayout.add_widget(self.dayBarLayout, len(self.outerLayout.children))
-            # This button has the current week of the year
-            self.weekButton = Button(text=str(self.originalStartDate.isocalendar()[1]), size_hint_x=None,
-                                     color=(0, 0, 0, 1),
-                                     background_normal="CalendarActive.png", background_down="CalendarActive.png")
-            self.hourBar.bind(width=lambda inst, width: setattr(self.weekButton, "width", width))
-            self.dayBarLayout.add_widget(self.weekButton)
 
+        self.dayBarLayout.clear_widgets()
+        self.innerBodyLayout.clear_widgets()
         dayNames = ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
         for i in range(self.days):
             # Label for the date of each column
@@ -194,11 +199,11 @@ class CalendarLessThan30Days(Widget):
                 else:
                     currentColor = lambda: (0, 0, 0, 1)
             else:
-                if i == self.originalStartDate.isoweekday():
+                if i == self.originalStartDate.isoweekday() % 7:
                     # Make sure it updates with PrimaryColor
                     currentColor = lambda: Globals.PrimaryColor
                     Globals.redraw.append((btn, lambda btn: setattr(btn, "color", Globals.PrimaryColor)))
-                elif i < self.originalStartDate.isoweekday():
+                elif i < self.originalStartDate.isoweekday() % 7:
                     currentColor = lambda: (.45, .45, .45, 1)
                 else:
                     currentColor = lambda: (0, 0, 0, 1)
@@ -231,16 +236,16 @@ class CalendarLessThan30Days(Widget):
                 event.pos_hint = {"center_y": timeToPos(event.time)}
                 self.dayList[i].add_widget(event)
 
-        # Adding layout structure below...
-        self.add_widget(self.outerLayout)
-        self.outerLayout.add_widget(self.innerLayout)
-        self.innerLayout.add_widget(self.bodyView)
-        self.bodyView.add_widget(self.bodyLayout)
-        self.bodyLayout.add_widget(self.hourBar)
-        self.bodyLayout.add_widget(self.innerBodyLayout)
+        if self.days > 1:  # Add the hour bar if it's not one day
+            if not self.dayBarLayout in self.outerLayout.children:
+                self.outerLayout.add_widget(self.dayBarLayout)
+            # This button has the current week of the year
+            self.weekButton = Button(text=str(self.originalStartDate.isocalendar()[1]), size_hint_x=None,
+                                     color=(0, 0, 0, 1), width=self.hourBar.width,
+                                     background_normal="CalendarActive.png", background_down="CalendarActive.png")
+            self.hourBar.bind(width=lambda inst, width: setattr(self.weekButton, "width", width))
+            self.dayBarLayout.add_widget(self.weekButton, len(self.dayBarLayout.children))
 
-    def changeDate(self, date):  # Not yet implemented
-        pass
 
 
 def openEventGUI(self):  # Not yet implemented
