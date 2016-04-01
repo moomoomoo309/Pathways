@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from calendar import monthrange
 from datetime import date, timedelta
 from datetime import datetime
@@ -14,6 +16,7 @@ from kivy.uix.widget import Widget
 
 import Globals
 from AsyncImageButton import AsyncImageButton
+from ColorUtils import shouldUseWhiteText
 from Event import Event
 
 
@@ -89,7 +92,12 @@ class Calendar30Days(Widget):
                          markup=True, halign="left", valign="top", text_size=self.gridSize)
             btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
             if self.startDate + timedelta(days=i) == self.selectedDate:
+                btn.text = "[color=" + ("FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor) else "000000") + btn.text[
+                                                                                                              13:]
                 btn.background_color = Globals.PrimaryColor
+                Globals.redraw.append((btn, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
+                Globals.redraw.append((btn, lambda inst: setattr(inst, "text", "[color=" + (
+                    "FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor) else "000000") + inst.text[13:])))
             # Keep text lined up on resize
             self.Layout.add_widget(btn)
 
@@ -107,12 +115,13 @@ class Calendar30Days(Widget):
         self.Layout.pos = self.pos
 
     def changeDate(self, date):  # Set the date to the given date
-        self.selectedDate = date
-        date = date.replace(day=1)
-        self.startDate = date
-        self.MonthLength = monthrange(date.year, date.month)[1]
-        self.MonthStart = (date.replace(day=1).weekday() + 1) % 7
-        self.populate_body()
+        if self.selectedDate != date:
+            self.selectedDate = date
+            date = date.replace(day=1)
+            self.startDate = date
+            self.MonthLength = monthrange(date.year, date.month)[1]
+            self.MonthStart = (date.replace(day=1).weekday() + 1) % 7
+            self.populate_body()
 
 
 class CalendarLessThan30Days(Widget):
@@ -228,9 +237,13 @@ class CalendarLessThan30Days(Widget):
             event = Event(size_hint_y=float(self.eventHeight) / self.bodyLayout.height, x=1,
                           pos_hint={"center_y": timeToPos(datetime.now())},
                           name="TestButton" + str(i), background_normal="CalendarInactive.png",
-                          background_down="CalendarInactive.png", background_color=(0, .5, 0, 1),
-                          color=(0, 0, 0, 1), on_press=openEventGUI)
+                          background_down="CalendarInactive.png", background_color=Globals.PrimaryColor,
+                          color=(1, 1, 1, 1) if shouldUseWhiteText(Globals.PrimaryColor) else (0, 0, 0, 1),
+                          on_press=openEventGUI)
             event.bind(width=lambda inst, width: setattr(inst, "width", inst.parent.width - 1))
+            Globals.redraw.append((event, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
+            Globals.redraw.append((event, lambda inst: setattr(inst, "color", (1, 1, 1, 1) if shouldUseWhiteText(
+                Globals.PrimaryColor) else (0, 0, 0, 1))))
             self.dayList[i].add_widget(event)
             for event in WidgetsToAddOnAGivenDay:  # Sort them out by date before here
                 event.pos_hint = {"center_y": timeToPos(event.time)}
@@ -245,7 +258,6 @@ class CalendarLessThan30Days(Widget):
                                      background_normal="CalendarActive.png", background_down="CalendarActive.png")
             self.hourBar.bind(width=lambda inst, width: setattr(self.weekButton, "width", width))
             self.dayBarLayout.add_widget(self.weekButton, len(self.dayBarLayout.children))
-
 
 
 def openEventGUI(self):  # Not yet implemented

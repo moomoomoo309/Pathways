@@ -1,11 +1,9 @@
 from datetime import datetime, timedelta
 from functools import partial
-from kivy.graphics.context_instructions import Color
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.uix.button import Button
 
 from kivy.properties import ObjectProperty, StringProperty, ListProperty, BooleanProperty
+from kivy.uix.button import Button
+
 
 class Event(Button):
     start = ObjectProperty(datetime.now(), baseclass=datetime)
@@ -23,7 +21,6 @@ class Event(Button):
         if self.text!="":
             self.name=self.text
         # Propogate resize to children
-        self.bind(color=lambda inst,color: setattr(self,"background_color", color))
         self.bind(name=lambda inst,name: setattr(self,"text",name))
         self.bind(text=lambda inst,text: setattr(self,"name",text))
         self.bind(start=partial(self.dateChanged))  # Partial drops the unneeded arguments
