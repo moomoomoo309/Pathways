@@ -1,10 +1,9 @@
-from __future__ import print_function
-
 from calendar import monthrange
 from datetime import date, timedelta
 from datetime import datetime
 
 from kivy.core.window import Window
+from kivy.effects.opacityscroll import OpacityScrollEffect
 from kivy.graphics import Rectangle, Color
 from kivy.properties import BooleanProperty, BoundedNumericProperty, ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
@@ -33,8 +32,6 @@ class Calendar30Days(Widget):
     MonthLength = BoundedNumericProperty(30, min=28, max=31)
     # The day of the week the month starts on
     MonthStart = BoundedNumericProperty(0, min=0, max=6)
-    # The size of each element in the grid
-    gridSize = 0
     # The date selected
     selectedDate = ObjectProperty(date.today())
 
@@ -63,7 +60,6 @@ class Calendar30Days(Widget):
 
     def populate_body(self):
         self.Layout.clear_widgets()
-        self.gridSize = (self.size[0] / self.cols, self.size[1] / (self.rows - 1 + .8685))  # The size of each day
 
         # Add the names of the days of the week
         dayNames = ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
@@ -78,7 +74,7 @@ class Calendar30Days(Widget):
             self.Layout.add_widget(btn)
         for i in range(0, self.MonthStart):
             self.Layout.add_widget(
-                AsyncImageButton(source=self.getImageSource(None), allow_stretch=True, size=self.gridSize,
+                AsyncImageButton(source=self.getImageSource(None), allow_stretch=True,
                                  keep_ratio=False,
                                  on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
         # If the month doesn't start on a Monday, you need empty days.
@@ -88,7 +84,7 @@ class Calendar30Days(Widget):
             btn = Button(texture=None, background_normal="CalendarInactive.png",
                          background_down="CalendarActive.png",
                          text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]",
-                         markup=True, halign="left", valign="top", text_size=self.gridSize)
+                         markup=True, halign="left", valign="top")
             btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
             if self.startDate + timedelta(days=i) == self.selectedDate:
                 btn.text = "[color=" + ("FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor) else "000000") + btn.text[
@@ -104,22 +100,20 @@ class Calendar30Days(Widget):
         for i in range(0, self.rows * self.cols - self.MonthLength - self.MonthStart - 7):
             # Subtract 7 to remove dayNames
             self.Layout.add_widget(
-                AsyncImageButton(source=self.getImageSource(None), allow_stretch=True, size=self.gridSize,
+                AsyncImageButton(source=self.getImageSource(None), allow_stretch=True,
                                  keep_ratio=False,
                                  on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
 
     def _resize(self, *args):  # Propogate resize to children
-        self.gridSize = (self.size[0] / self.cols, self.size[1] / (self.rows - 2. / 3))
         self.Layout.size = self.size
         self.Layout.pos = self.pos
 
     def changeDate(self, date):  # Set the date to the given date
         if self.selectedDate != date:
             self.selectedDate = date
-            date = date.replace(day=1)
-            self.startDate = date
+            self.startDate = date.replace(day=1)
             self.MonthLength = monthrange(date.year, date.month)[1]
-            self.MonthStart = (date.replace(day=1).weekday() + 1) % 7
+            self.MonthStart = (self.startDate.weekday() + 1) % 7
             self.populate_body()
 
     def openEventGUI(self, day):  # Not yet implemented
@@ -144,7 +138,8 @@ class CalendarLessThan30Days(Widget):
         self.hourBar = BoxLayout(orientation="vertical", size=Window.size, size_hint_x=.2)  # Has the time being viewed
         self.bodyLayout = GridLayout(rows=1, width=Window.width, size_hint_y=None, height=2048)  # Hourbar & inner body
         self.innerBodyLayout = GridLayout(rows=1)  # Contains the actual body
-        self.bodyView = ScrollView(size_hint_y=None, width=Window.width)  # Scrollable bits, dayBar and actual body
+        self.bodyView = ScrollView(size_hint_y=None, width=Window.width, scroll_wheel_distance=75,
+                                   effect_y=OpacityScrollEffect())  # Scrollable bits, dayBar and actual body
         # Propagate resize to children below
         self.bind(size=lambda inst, size: setattr(self.outerLayout, "size", size))
         self.outerLayout.bind(width=lambda inst, width: setattr(self.innerLayout, "width", width))

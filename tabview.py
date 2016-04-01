@@ -107,7 +107,7 @@ class TabView(Widget):
                             j += 1
         self.carousel = FloatCarousel(
             size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize),
-            direction="left", min_move=.01, screenNames=self.screenNames)
+            direction="left", min_move=.01, screenNames=self.screenNames, scroll_timeout=125, scroll_distance=10)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=str(MonthNames[self.CurrentMonth]) + " " + str(date.today().year))
