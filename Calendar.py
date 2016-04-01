@@ -69,11 +69,10 @@ class Calendar30Days(Widget):
         dayNames = ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
         for i in range(7):
             btn = Button(texture=None, background_normal="CalendarInactive.png",
-                         background_down="CalendarActive.png", height=self.height * (1 - .8685), size_hint_y=None,
+                         background_down="CalendarActive.png", height=75, size_hint_y=None,
                          # Used the first letter of each dayName
                          text="[color=000000][size=36]" + dayNames[i][0:3] + "[/color][/size]",
-                         markup=True, halign="center", valign="middle",
-                         text_size=(self.gridSize[0], self.gridSize[1] * 2 / 3))
+                         markup=True, halign="center", valign="middle", on_press=self.openEventGUI)
             btn.bind(size=lambda btn, newVal: setattr(btn, "text_size", newVal))
             # Keep the text_size correct so the text lines up correctly on resize
             self.Layout.add_widget(btn)
@@ -123,6 +122,9 @@ class Calendar30Days(Widget):
             self.MonthStart = (date.replace(day=1).weekday() + 1) % 7
             self.populate_body()
 
+    def openEventGUI(self, day):  # Not yet implemented
+        pass
+
 
 class CalendarLessThan30Days(Widget):
     # Number of days in this calendar
@@ -133,8 +135,8 @@ class CalendarLessThan30Days(Widget):
 
     def __init__(self, **kwargs):
         super(CalendarLessThan30Days, self).__init__(**kwargs)
-        self.dayBarLayout = GridLayout(rows=1, spacing=1,
-                                       size_hint_y=.15)  # Layout for the dayBar, if it exists, and body
+        self.dayBarLayout = GridLayout(rows=1, spacing=1, height=75,
+                                       size_hint_y=None)  # Layout for the dayBar, if it exists, and body
         self.dayList = []  # Has layout for each day
         self.outerLayout = BoxLayout(orientation="vertical", size=Window.size,
                                      spacing=1)  # Contains the top bar "head" and body.
@@ -147,9 +149,9 @@ class CalendarLessThan30Days(Widget):
         self.bind(size=lambda inst, size: setattr(self.outerLayout, "size", size))
         self.outerLayout.bind(width=lambda inst, width: setattr(self.innerLayout, "width", width))
         if self.days > 1:
-            self.innerLayout.height = self.height * .8685  # This decimal is to try to keep it a one pixel border
             self.innerLayout.bind(
-                size=lambda inst, size: setattr(self.bodyView, "size", (size[0], self.height * .8665)))
+                size=lambda inst, size: setattr(self.bodyView, "height", self.innerLayout.height))
+        #            self.dayBarLayout.bind(size=lambda _,__: setattr(self.innerLayout,"y",self.height - self.dayBarLayout.height))
         else:  # If it's one day, you can remove the top bar.
             self.innerLayout.height = self.height
             self.innerLayout.bind(size=lambda inst, size: setattr(self.bodyView, "size", (size[0], self.height)))
@@ -239,7 +241,7 @@ class CalendarLessThan30Days(Widget):
                           name="TestButton" + str(i), background_normal="CalendarInactive.png",
                           background_down="CalendarInactive.png", background_color=Globals.PrimaryColor,
                           color=(1, 1, 1, 1) if shouldUseWhiteText(Globals.PrimaryColor) else (0, 0, 0, 1),
-                          on_press=openEventGUI)
+                          on_press=self.openEventGUI)
             event.bind(width=lambda inst, width: setattr(inst, "width", inst.parent.width - 1))
             Globals.redraw.append((event, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
             Globals.redraw.append((event, lambda inst: setattr(inst, "color", (1, 1, 1, 1) if shouldUseWhiteText(
@@ -259,9 +261,8 @@ class CalendarLessThan30Days(Widget):
             self.hourBar.bind(width=lambda inst, width: setattr(self.weekButton, "width", width))
             self.dayBarLayout.add_widget(self.weekButton, len(self.dayBarLayout.children))
 
-
-def openEventGUI(self):  # Not yet implemented
-    pass
+    def openEventGUI(self, event):  # Not yet implemented
+        pass
 
 
 def timeToPos(time):  # Returns the time to be given to pos_hint={"center_y".
