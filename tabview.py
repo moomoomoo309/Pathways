@@ -1,22 +1,22 @@
 from calendar import monthrange
 from datetime import date, datetime
-from os.path import isfile
-from random import randint
-
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
+from os.path import isfile
+from random import randint
+
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, BooleanProperty, DictProperty, partial
 
 import Globals
 from Calendar import Calendar30Days
@@ -25,19 +25,22 @@ from DatePicker import DatePickerWidget, getMonthLength, getStartDay
 
 # Name of each month
 
-MonthNames = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
-              "November", "December")
+MonthNames = (
+    "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November",
+    "December")
 
 
 class TabView(Widget):
     # Replace these with pictures of your choice.
-    Images = DictProperty(
-        {1: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
-             "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5%2Fdancing-skeletons-liam-liberty.jpg&f=1",
-             "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
-             "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
-             "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
-             "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
+    Images = DictProperty({
+        1: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+            "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5"
+            "%2Fdancing-skeletons-liam-liberty.jpg&f=1",
+            "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
+            "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
+            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
+            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My "
+            "Pictures/RainbowPenguins.jpg"]})
 
     # Use random images to fill the empty days of the calendar
     randomImages = BooleanProperty(False)
@@ -64,9 +67,9 @@ class TabView(Widget):
         super(TabView, self).__init__(**kwargs)  # I need this line for reasons.
         # The name of all of the screens
         self.screenNames = self.screenNames if hasattr(self, "screenNames") else ["Schedule", "1 Day", "3 Day", "Week",
-                                                                                  "Month"]
+            "Month"]
 
-        self.date=date.today()
+        self.date = date.today()
 
         # A list of the screens in the carousel.
         self.screenList = []
@@ -88,7 +91,6 @@ class TabView(Widget):
 
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
-
         # Remove any images which don't exist or are online if online is false
         for i in self.Images:
             if isinstance(i, (int, long)):
@@ -100,21 +102,20 @@ class TabView(Widget):
                         else:
                             j += 1
                     else:
-                        if not (self.Images[i][j][0:4] == "http" or self.Images[i][j][0:3] == "ftp") and not isfile(
-                                self.Images[i][j]):
+                        if not ("://" in self.images[i][j]) and not isfile(self.Images[i][j]):
                             self.Images[i].remove(self.Images[i][j])
                         else:
                             j += 1
         self.carousel = FloatCarousel(
-            size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize),
-            direction="left", min_move=.01, screenNames=self.screenNames, scroll_timeout=125, scroll_distance=10)
+            size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize), direction="left",
+            min_move=.01, screenNames=self.screenNames, scroll_timeout=125, scroll_distance=10)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=str(MonthNames[self.CurrentMonth]) + " " + str(date.today().year))
         # Draw the top bar
         for i in range(self.numTabs - 1, -1, -1):
             testScreen = Screen(name=self.screenNames[i],
-                                size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin))
+                size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin))
             testScreen.add_widget(Label(text="Add a widget here with the add_screen method!"))
             testScreen.isDefault = True
             # You need a second screen for testing!
@@ -135,7 +136,7 @@ class TabView(Widget):
             if i == self.FloatBar:
                 i.size = [self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio]
                 i.pos = [self.currentTab * self.size[0] / self.numTabs,
-                         self.size[1] - self.topBarSize - self.tabSize - self.tabMargin]
+                    self.size[1] - self.topBarSize - self.tabSize - self.tabMargin]
                 i.overlay.children[0].rgb = self.floatBarColor()[0:3]
                 i.overlay.children[0].a = .5
             elif i == self.MonthButton:
@@ -143,11 +144,11 @@ class TabView(Widget):
                 i.size = (self.size[0], self.topBarSize)
             elif hasattr(self, "datePicker") and i == self.datePicker:
                 rows = 6 if getStartDay(i.children[0].date.month, i.children[0].date.year) % 7 + getMonthLength(
-                    i.children[0].date.month,
-                    i.children[0].date.year) < 35 else 7
+                    i.children[0].date.month, i.children[0].date.year) < 35 else 7
                 i.size = (min(Window.width, Window.height), self.topBarSize * (rows + 1))
-                i.pos = (Window.width / 2 - min(Window.width, Window.height) / 2,
-                         Window.height - self.topBarSize * (rows + 1))
+                i.pos = (
+                    Window.width / 2 - min(Window.width, Window.height) / 2,
+                    Window.height - self.topBarSize * (rows + 1))
             elif isinstance(i, Button):
                 i.pos = (self._getTabButtonPos(i.i))
                 i.size = (self._getTabButtonSize())
@@ -166,9 +167,8 @@ class TabView(Widget):
     # Switches the screen to the one pressed by the button
     def _switchCalScreen(self, *args):
         for i in self.screenList:
-            if args[0].text[
-               len("[color=ffffff][size=24]"):-len(
-                   "[/size][/color]")] == i.name and i.name != self.carousel.current_slide.name:
+            if args[0].text[len("[color=ffffff][size=24]"):-len(
+                    "[/size][/color]")] == i.name and i.name != self.carousel.current_slide.name:
                 self.overrideTab = self.screenNames.index(i.name)
                 # Animate the floatbar
                 self.carousel.load_slide(i)
@@ -178,7 +178,7 @@ class TabView(Widget):
         self.currentTab = tab
         Animation().stop_all(self.FloatBar)
         Animation(x=self.size[0] / self.numTabs * self.currentTab, y=self.FloatBar.pos[1], duration=dur if dur else .25,
-                  transition=AnimationTransition.out_sine).start(self.FloatBar)
+            transition=AnimationTransition.out_sine).start(self.FloatBar)
         # out_sine looks pretty good, I think.
 
     def _getTabButtonPos(self, i):
@@ -192,7 +192,7 @@ class TabView(Widget):
         self.topBarBackground.add(Color(0, 0, 0))
         self.topBarBackground.add(Rectangle(pos=self.pos, size=self.size))
         self.topBarBackground.add(Rectangle(source="CalendarInactive.png", pos=(0, self.size[1] - self.topBarSize),
-                                            size=(self.size[0], self.topBarSize)))  # Draw the top bar
+            size=(self.size[0], self.topBarSize)))  # Draw the top bar
         # Color the top bar, in its own group so the color can be changed by the redraw function.
 
         if not hasattr(self, "topBarBackgroundColor"):
@@ -202,7 +202,7 @@ class TabView(Widget):
         self.topBarBackground.add(self.topBarBackgroundColor)
 
         self.topBarBackground.add(Rectangle(pos=(0, self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
-                                            size=(self.size[0], self.tabSize)))  # Draw the tabs bar
+            size=(self.size[0], self.tabSize)))  # Draw the tabs bar
         self.topBarBackground.add(Color(0, 0, 0))
 
     def _drawGui(self, Month):  # Draws the tab view (besides the boxes behind the buttons and label)
@@ -212,29 +212,26 @@ class TabView(Widget):
         # Add text for tabs
         for i in range(0, self.numTabs):
             btn = Button(text_size=self._getTabButtonSize(), size=self._getTabButtonSize(),
-                         text=("[color=ffffff]" if shouldUseWhiteText(self.tabBarColor())
-                               else "[color=000000]") + "[size=24]" + self.screenNames[i] + "[/size][/color]",
-                         background_color=(1, 1, 1, 0), pos=self._getTabButtonPos(i), markup=True, halign="center",
-                         valign="middle", on_press=self._switchCalScreen)
+                text=("[color=ffffff]" if shouldUseWhiteText(self.tabBarColor())
+                else "[color=000000]") + "[size=24]" + self.screenNames[i] + "[/size][/color]",
+                background_color=(1, 1, 1, 0), pos=self._getTabButtonPos(i), markup=True, halign="center",
+                valign="middle", on_press=self._switchCalScreen)
             btn.i = i
             self.add_widget(btn)
         self.MonthButton = Button(text_size=(self.size[0], self.topBarSize), size=(self.size[0], self.topBarSize),
-                                  text="[color=000000][size=36]" + Month + "[/color][/size]",
-                                  pos=(-1, self.size[1] - self.topBarSize), markup=True, halign="center",
-                                  valign="middle", on_press=showDate, background_color=(1, 1, 1, 1),
-                                  background_normal="CalendarInactive.png", background_down="CalendarInactive.png")
+            text="[color=000000][size=36]" + Month + "[/color][/size]", pos=(-1, self.size[1] - self.topBarSize),
+            markup=True, halign="center", valign="middle", on_press=showDate, background_color=(1, 1, 1, 1),
+            background_normal="CalendarInactive.png", background_down="CalendarInactive.png")
 
         self.add_widget(self.MonthButton)
 
         # It's got markup in it for color and size, and the text is centered vertically and horizontally.
         # The text is from the keyword argument "Month".
         self.FloatBar = AsyncImage(source="CalendarInactive.png",
-                                   size=(self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio),
-                                   pos=(self.currentTab * self.size[0] / self.numTabs,
-                                        self.size[1] - self.topBarSize - self.tabSize - self.tabMargin),
-                                   keep_ratio=False, allow_stretch=True)
+            size=(self.size[0] / self.numTabs, self.tabSize * self.floatBarRatio), pos=(
+                self.currentTab * self.size[0] / self.numTabs,
+                self.size[1] - self.topBarSize - self.tabSize - self.tabMargin), keep_ratio=False, allow_stretch=True)
 
-        # WIP changing color of floatbar.
         self.FloatBar.overlay = InstructionGroup()
         color = self.floatBarColor()
         if len(color) == 3:
@@ -271,9 +268,9 @@ class TabView(Widget):
             if hasattr(i.children[0], "changeDate"):
                 i.children[0].changeDate(date)
 
-        self.date=date
-        self.MonthButton.text = self.MonthButton.text[0:len("[color=000000][size=XX]")] + MonthNames[date.month-1] + " " +\
-                                str(date.year) + "[/size][/color]"
+        self.date = date
+        self.MonthButton.text = self.MonthButton.text[0:len("[color=000000][size=XX]")] + MonthNames[
+            date.month - 1] + " " + str(date.year) + "[/size][/color]"
 
 
 def redraw(self):
@@ -287,23 +284,19 @@ def redraw(self):
         if self.datePicker.children[0].selectedButton is not None:
             self.datePicker.children[0].selectedButton.background_color = self.tabBarColor()
             self.datePicker.children[0].selectedButton.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
-                                                               else "[color=000000") + self.datePicker.children[
-                                                                                           0].selectedButton.text[13:]
+            else "[color=000000") + self.datePicker.children[0].selectedButton.text[13:]
         self.datePicker.children[0].PreviousMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
-                                                          else "[color=000000") + self.datePicker.children[
-                                                                                      0].PreviousMonth.text[13:]
+        else "[color=000000") + self.datePicker.children[0].PreviousMonth.text[13:]
 
         self.datePicker.children[0].CurrentMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
-                                                         else "[color=000000") + self.datePicker.children[
-                                                                                     0].CurrentMonth.text[13:]
+        else "[color=000000") + self.datePicker.children[0].CurrentMonth.text[13:]
 
         self.datePicker.children[0].NextMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
-                                                      else "[color=000000") + self.datePicker.children[
-                                                                                  0].NextMonth.text[13:]
+        else "[color=000000") + self.datePicker.children[0].NextMonth.text[13:]
     for i in self.children:
         if isinstance(i, Button) and i != self.MonthButton and i.text[0:7] == "[color=":
             i.text = ("[color=000000]" if not shouldUseWhiteText(self.tabBarColor()) else "[color=ffffff]") + i.text[
-                                                                                                              14:]
+            14:]
 
 
 def showDate(self):  # Pops up the datePicker, adding the widget when it's needed
@@ -312,12 +305,12 @@ def showDate(self):  # Pops up the datePicker, adding the widget when it's neede
     if hasattr(parent, "datePicker"):
         parent.remove_widget(parent.datePicker)
     rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(date.today().month,
-                                                                                        date.today().year) < 35 else 7
+        date.today().year) < 35 else 7
 
     # The actual datePicker widget
     parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), parent.topBarSize * (rows + 1)),
-                                         date=parent.date, pos=(Window.width / 2 - min(Window.width, Window.height) / 2,
-                                              Window.height - parent.topBarSize * (rows + 1)))
+        date=parent.date,
+        pos=(Window.width / 2 - min(Window.width, Window.height) / 2, Window.height - parent.topBarSize * (rows + 1)))
 
     # Changes the date when the date is picked
     parent.datePicker.dismiss = parent.changeDate
@@ -461,31 +454,31 @@ def genericResize(*args, **kwargs):  # Generic method to resize any object(s) wi
 
 def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
-                          MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
-                          size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
-                          online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
+        MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
+        size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin), online=self.online,
+        randomImages=self.randomImages, getImageSource=self._getImageSource)
+
 
 def hideGradient(self):
     screen = self
-    while screen.parent is not None and not isinstance(screen,Screen):
+    while screen.parent is not None and not isinstance(screen, Screen):
         screen = screen.parent
     screen.gradient = False
-    screen.canvas.after.children[len(screen.canvas.after.children)-1].pos = (-100000, -100000)
+    screen.canvas.after.children[len(screen.canvas.after.children) - 1].pos = (-100000, -100000)
 
 
 def showGradient(self):
     screen = self
     app = None
-    while screen.parent is not None and not isinstance(screen,Screen):
-        if isinstance(screen,TabView):
+    while screen.parent is not None and not isinstance(screen, Screen):
+        if isinstance(screen, TabView):
             app = screen
         screen = screen.parent
     screen.gradient = False
-    rectHeight=20
-    screen.canvas.after.children[len(screen.canvas.after.children)-1].pos = (0, screen.height - rectHeight -
-                                                                         app.tabSize * app.floatBarRatio -
-                                                                         app.topBarSize - app.tabMargin - app.tabSize *
-                                                                         (1 - app.floatBarRatio))
+    rectHeight = 20
+    screen.canvas.after.children[len(screen.canvas.after.children) - 1].pos = (0,
+    screen.height - rectHeight - app.tabSize * app.floatBarRatio - app.topBarSize - app.tabMargin - app.tabSize * (
+        1 - app.floatBarRatio))
 
 
 class tabview(App):
