@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from calendar import monthrange
 from datetime import date, timedelta
 from datetime import datetime
@@ -65,30 +67,30 @@ class Calendar30Days(Widget):
         dayNames = ("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
         for i in range(7):
             btn = Button(texture=None, background_normal="CalendarInactive.png",
-                         background_down="CalendarActive.png", height=75, size_hint_y=None,
-                         # Used the first letter of each dayName
-                         text="[color=000000][size=36]" + dayNames[i][0:3] + "[/color][/size]",
-                         markup=True, halign="center", valign="middle", on_press=self.openEventGUI)
+                background_down="CalendarActive.png", height=75, size_hint_y=None,
+                # Used the first letter of each dayName
+                text="[color=000000][size=36]" + dayNames[i][0:3] + "[/color][/size]",
+                markup=True, halign="center", valign="middle", on_press=self.openEventGUI)
             btn.bind(size=lambda btn, newVal: setattr(btn, "text_size", newVal))
             # Keep the text_size correct so the text lines up correctly on resize
             self.Layout.add_widget(btn)
         for i in range(0, self.MonthStart):
             self.Layout.add_widget(
                 AsyncImageButton(source=self.getImageSource(None), allow_stretch=True,
-                                 keep_ratio=False,
-                                 on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
+                    keep_ratio=False,
+                    on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
         # If the month doesn't start on a Monday, you need empty days.
 
         # Add all of the days
         for i in range(0, self.MonthLength):
             btn = Button(texture=None, background_normal="CalendarInactive.png",
-                         background_down="CalendarActive.png",
-                         text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]",
-                         markup=True, halign="left", valign="top")
+                background_down="CalendarActive.png",
+                text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]",
+                markup=True, halign="left", valign="top")
             btn.bind(size=lambda self, newVal: setattr(self, "text_size", newVal))
             if self.startDate + timedelta(days=i) == self.selectedDate:
                 btn.text = "[color=" + ("FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor) else "000000") + btn.text[
-                                                                                                              13:]
+                13:]
                 btn.background_color = Globals.PrimaryColor
                 Globals.redraw.append((btn, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
                 Globals.redraw.append((btn, lambda inst: setattr(inst, "text", "[color=" + (
@@ -101,8 +103,8 @@ class Calendar30Days(Widget):
             # Subtract 7 to remove dayNames
             self.Layout.add_widget(
                 AsyncImageButton(source=self.getImageSource(None), allow_stretch=True,
-                                 keep_ratio=False,
-                                 on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
+                    keep_ratio=False,
+                    on_press=lambda x: setattr(x, "source", self.getImageSource(None))))
 
     def _resize(self, *args):  # Propogate resize to children
         self.Layout.size = self.size
@@ -130,23 +132,42 @@ class CalendarLessThan30Days(Widget):
     def __init__(self, **kwargs):
         super(CalendarLessThan30Days, self).__init__(**kwargs)
         self.dayBarLayout = GridLayout(rows=1, spacing=1, height=75,
-                                       size_hint_y=None)  # Layout for the dayBar, if it exists, and body
+            size_hint_y=None)  # Layout for the dayBar, if it exists, and body
         self.dayList = []  # Has layout for each day
         self.outerLayout = BoxLayout(orientation="vertical", size=Window.size,
-                                     spacing=1)  # Contains the top bar "head" and body.
+            spacing=1)  # Contains the top bar "head" and body.
         self.innerLayout = BoxLayout(orientation="horizontal", size=Window.size)  # Sizes the bodyView
         self.hourBar = BoxLayout(orientation="vertical", size=Window.size, size_hint_x=.2)  # Has the time being viewed
         self.bodyLayout = GridLayout(rows=1, width=Window.width, size_hint_y=None, height=2048)  # Hourbar & inner body
         self.innerBodyLayout = GridLayout(rows=1)  # Contains the actual body
         self.bodyView = ScrollView(size_hint_y=None, width=Window.width, scroll_wheel_distance=75,
-                                   effect_y=OpacityScrollEffect())  # Scrollable bits, dayBar and actual body
+            effect_y=OpacityScrollEffect())  # Scrollable bits, dayBar and actual body
+        self.backgroundImage = Rectangle(source='Circle.png', size=self.innerLayout.size, pos=self.innerLayout.pos)
+        self.background = Rectangle(size=(self.width,self.bodyLayout.height), pos=(self.bodyView.x,-1000000))
+
+        self.canvas.before.add(self.backgroundImage)
+        self.canvas.before.add(Color(0, 1, 1, 1))
+        self.canvas.before.add(self.background)
+        def getBackgroundHeight(self,inst):
+            if inst.scroll_y>1.001:
+                val= self.bodyLayout.height - inst.scroll_y * (self.bodyLayout.height - self.bodyView.height)
+                print(val)
+                return val
+            elif inst.scroll_y<0:
+                return -self.background.size[1]-(inst.scroll_y * (self.bodyLayout.height-self.bodyView.height))
+            else:
+                return -1000000
+        self.bind(width=lambda inst,width: setattr(self.background, "size", (width, self.background.size[1])))
+        self.bodyView.bind(scroll_y=lambda inst,val: setattr(self.background,"pos",(self.background.pos[0],getBackgroundHeight(self,inst))))
         # Propagate resize to children below
+        self.innerLayout.bind(size=lambda inst, size: setattr(self.backgroundImage, "size", size))
+        self.innerLayout.bind(pos=lambda inst, pos: setattr(self.backgroundImage, "pos", pos))
         self.bind(size=lambda inst, size: setattr(self.outerLayout, "size", size))
         self.outerLayout.bind(width=lambda inst, width: setattr(self.innerLayout, "width", width))
         if self.days > 1:
             self.innerLayout.bind(
                 size=lambda inst, size: setattr(self.bodyView, "height", self.innerLayout.height))
-        #            self.dayBarLayout.bind(size=lambda _,__: setattr(self.innerLayout,"y",self.height - self.dayBarLayout.height))
+        # self.dayBarLayout.bind(size=lambda _,__: setattr(self.innerLayout,"y",self.height - self.dayBarLayout.height))
         else:  # If it's one day, you can remove the top bar.
             self.innerLayout.height = self.height
             self.innerLayout.bind(size=lambda inst, size: setattr(self.bodyView, "size", (size[0], self.height)))
@@ -158,8 +179,8 @@ class CalendarLessThan30Days(Widget):
         # Adds labels for each hour to the hourbar
         for i in range(24):
             lbl = Button(text=str((i + 11) % 12 + 1) + " " + ("AM" if i < 12 else "PM"), color=(0, 0, 0, 1),
-                         background_normal="CalendarActive.png", background_down="CalendarActive.png", halign="center",
-                         valign="top", text_size=(100, 2048 / 24))
+                background_normal="CalendarActive.png", background_down="CalendarActive.png", halign="center",
+                valign="top", text_size=(100, 2048 / 24))
             # Resize text_size to the text is aligned correctly
             lbl.bind(size=lambda inst, size: setattr(lbl, "text_size", size))
             self.hourBar.add_widget(lbl)
@@ -173,6 +194,9 @@ class CalendarLessThan30Days(Widget):
         self.bodyView.add_widget(self.bodyLayout)
         self.bodyLayout.add_widget(self.hourBar)
         self.bodyLayout.add_widget(self.innerBodyLayout)
+
+        self.bodyView._viewport.bind(size=lambda inst, size: setattr(self.background, "size", size))
+        self.bodyView._viewport.bind(pos=lambda inst, pos: setattr(self.background, "pos", pos))
 
     def changeDate(self, date):
         self.originalStartDate = date
@@ -190,10 +214,10 @@ class CalendarLessThan30Days(Widget):
         for i in range(self.days):
             # Label for the date of each column
             btn = Button(background_normal="CalendarInactive.png", halign="center",
-                         background_down="CalendarInactive.png",
-                         text=dayNames[(self.startDate.isocalendar()[2] + i) % 7] + "\n" + str(
-                             (self.startDate + timedelta(days=i)).month) + "/" + str(
-                             (self.startDate + timedelta(days=i)).day))
+                background_down="CalendarInactive.png",
+                text=dayNames[(self.startDate.isocalendar()[2] + i) % 7] + "\n" + str(
+                    (self.startDate + timedelta(days=i)).month) + "/" + str(
+                    (self.startDate + timedelta(days=i)).day))
             # Color days before today gray, today the PrimaryColor, and days after today black.
             if self.days != 7:
                 if i == self.days // 2:
@@ -222,21 +246,21 @@ class CalendarLessThan30Days(Widget):
             # Resize the layout on size change
             dayLayout.bind(
                 size=lambda inst, size: setattr(inst.canvas.before.children[len(inst.canvas.before.children) - 1],
-                                                "size", (size[0] - 1, size[1])))
+                    "size", (size[0] - 1, size[1])))
             dayLayout.bind(
                 pos=lambda inst, pos: setattr(inst.canvas.before.children[len(inst.canvas.before.children) - 1], "pos",
-                                              inst.to_local(pos[0] + 1, pos[1])))
+                    inst.to_local(pos[0] + 1, pos[1])))
             dayLayout.canvas.before.add(rect)
             self.dayList.append(dayLayout)  # Put a layout for each day, so the columns are separate.
 
             self.innerBodyLayout.add_widget(self.dayList[i])
             # Test Widget
             event = Event(size_hint_y=float(self.eventHeight) / self.bodyLayout.height, x=1,
-                          pos_hint={"center_y": timeToPos(datetime.now())},
-                          name="TestButton" + str(i), background_normal="CalendarInactive.png",
-                          background_down="CalendarInactive.png", background_color=Globals.PrimaryColor,
-                          color=(1, 1, 1, 1) if shouldUseWhiteText(Globals.PrimaryColor) else (0, 0, 0, 1),
-                          on_press=self.openEventGUI)
+                pos_hint={"center_y": timeToPos(datetime.now())},
+                name="TestButton" + str(i), background_normal="CalendarInactive.png",
+                background_down="CalendarInactive.png", background_color=Globals.PrimaryColor,
+                color=(1, 1, 1, 1) if shouldUseWhiteText(Globals.PrimaryColor) else (0, 0, 0, 1),
+                on_press=self.openEventGUI)
             event.bind(width=lambda inst, width: setattr(inst, "width", inst.parent.width - 1))
             Globals.redraw.append((event, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
             Globals.redraw.append((event, lambda inst: setattr(inst, "color", (1, 1, 1, 1) if shouldUseWhiteText(
@@ -251,8 +275,8 @@ class CalendarLessThan30Days(Widget):
                 self.outerLayout.add_widget(self.dayBarLayout)
             # This button has the current week of the year
             self.weekButton = Button(text=str(self.originalStartDate.isocalendar()[1]), size_hint_x=None,
-                                     color=(0, 0, 0, 1), width=self.hourBar.width,
-                                     background_normal="CalendarActive.png", background_down="CalendarActive.png")
+                color=(0, 0, 0, 1), width=self.hourBar.width,
+                background_normal="CalendarActive.png", background_down="CalendarActive.png")
             self.hourBar.bind(width=lambda inst, width: setattr(self.weekButton, "width", width))
             self.dayBarLayout.add_widget(self.weekButton, len(self.dayBarLayout.children))
 
