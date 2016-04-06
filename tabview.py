@@ -32,8 +32,8 @@ MonthNames = (
 
 class TabView(Widget):
     # Replace these with pictures of your choice.
-    Images = DictProperty({
-        1: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+    images = DictProperty({
+        3: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
             "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5"
             "%2Fdancing-skeletons-liam-liberty.jpg&f=1",
             "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
@@ -43,7 +43,7 @@ class TabView(Widget):
             "Pictures/RainbowPenguins.jpg"]})
 
     # Use random images to fill the empty days of the calendar
-    randomImages = BooleanProperty(False)
+    randomImages = BooleanProperty(True)
     # Get images from the internet
     online = BooleanProperty(True)
     # The size of the top bar
@@ -88,27 +88,28 @@ class TabView(Widget):
 
         # Forces the tab to be used to be this one.
         self.overrideTab = None
+        self.online=True
 
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
         # Remove any images which don't exist or are online if online is false
-        for i in self.Images:
+        for i in self.images:
             if isinstance(i, (int, long)):
                 j = 0
-                while j < self.Images[i].__len__():
+                while j < self.images[i].__len__():
                     if not self.online:
-                        if not isfile(self.Images[i][j]):
-                            self.Images[i].remove(self.Images[i][j])
+                        if not isfile(self.images[i][j]):
+                            self.images[i].remove(self.images[i][j])
                         else:
                             j += 1
                     else:
-                        if not ("://" in self.images[i][j]) and not isfile(self.Images[i][j]):
-                            self.Images[i].remove(self.Images[i][j])
+                        if not ("://" in self.images[i][j]) and not isfile(self.images[i][j]):
+                            self.images[i].remove(self.images[i][j])
                         else:
                             j += 1
         self.carousel = FloatCarousel(
             size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize), direction="left",
-            min_move=.01, screenNames=self.screenNames, scroll_timeout=125, scroll_distance=10)
+            min_move=.1, screenNames=self.screenNames, scroll_timeout=200, scroll_distance=10)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=str(MonthNames[self.CurrentMonth]) + " " + str(date.today().year))
@@ -249,15 +250,15 @@ class TabView(Widget):
         # Add the float bar
 
     def _getImageSource(self, blockedImage):  # Changes the images on the empty days on click
-        if self.randomImages and self.CurrentMonth in self.Images is not None and self.Images[
-            self.CurrentMonth].__len__() > 0:
-            img = self.Images[self.CurrentMonth][randint(0, self.Images[self.CurrentMonth].__len__() - 1)]
-            if self.Images[self.CurrentMonth].__len__() > 1 and blockedImage is not None:
+        if self.randomImages and self.CurrentMonth in self.images is not None and len(self.images[
+            self.CurrentMonth]) > 0:
+            img = self.images[self.CurrentMonth][randint(0, len(self.images[self.CurrentMonth]) - 1)]
+            if len(self.images[self.CurrentMonth]) > 1 and blockedImage is not None:
                 while img == blockedImage:
-                    img = self.Images[self.CurrentMonth][randint(0, self.Images[self.CurrentMonth].__len__() - 1)]
-            elif self.Images[self.CurrentMonth].__len__() <= 1:
+                    img = self.images[self.CurrentMonth][randint(0, len(self.images[self.CurrentMonth]) - 1)]
+            elif len(self.images[self.CurrentMonth]) <= 1:
                 return img
-            if isfile(img) or img[0:4] == "http" or img[0:3] == "ftp":
+            if isfile(img) or "://" in img:
                 return img
         return "CalendarInactive.png"
 
@@ -483,7 +484,7 @@ def showGradient(self):
 
 class tabview(App):
     def build(self):
-        app = TabView(size=(Window.width, Window.height), randomImages=True, online=False)
+        app = TabView(size=(Window.width, Window.height), randomImages=True, online=True)
         Window.bind(on_resize=partial(genericResize, objs=app, fct=lambda: Window.size))
         app.add_screen(makeCalWidget(app))
         return app

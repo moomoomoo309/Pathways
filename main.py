@@ -1,35 +1,32 @@
-from __future__ import print_function
-
 import calendar
 from datetime import date, datetime
 from functools import partial
 from kivy.app import App
 from kivy.core.window import Window
-from kivy.uix.boxlayout import BoxLayout
+from kivy.graphics import Rectangle
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen, ScreenManager, NoTransition
 from kivy.uix.settings import Settings, SettingItem
 from kivy.uix.slider import Slider
-from kivy.uix.widget import Widget
-from kivy.uix.popup import Popup
 
 from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
 
 import Globals
 from Calendar import Calendar30Days, CalendarLessThan30Days
 from ColorUtils import shouldUseWhiteText, PrimaryColors, Gradient
+from ScheduleView import ScheduleView
 from tabview import TabView, genericResize
-from kivy.graphics import Rectangle
 
 
 def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
-                          MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
-                          size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
-                          online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
+        MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
+        size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
+        online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
 
 
 class SettingSlider(SettingItem):
@@ -76,7 +73,7 @@ class SettingColorList(SettingItem):
         self.btns = GridLayout(cols=4, spacing=1)
         self.popup = Popup(title="Primary Color", content=self.btns, size_hint=(.75, .75))
         self.btn = Button(background_down="CalendarInactive.png", background_normal="CalendarInactive.png",
-                          background_color=self.realValue, on_press=self.popup.open)
+            background_color=self.realValue, on_press=self.popup.open)
         # Recolor that button with the current color
         self.btn.bind(background_color=lambda inst, val: setattr(self, "realValue", val))
         self.btn.bind(background_color=self.popup.dismiss)
@@ -84,9 +81,10 @@ class SettingColorList(SettingItem):
 
         # Add the buttons for each color
         for i in self.colors:
-            self.btns.add_widget(Button(background_down="CalendarInactive.png", background_normal="CalendarInactive.png",
-                                   background_color=i,
-                                   on_press=lambda inst: setattr(self.btn, "background_color", inst.background_color)))
+            self.btns.add_widget(
+                Button(background_down="CalendarInactive.png", background_normal="CalendarInactive.png",
+                    background_color=i,
+                    on_press=lambda inst: setattr(self.btn, "background_color", inst.background_color)))
 
         # Update the primary color
         Globals.PrimaryColor = self.realValue
@@ -129,6 +127,7 @@ class main(App):
         app.add_screen(CalendarLessThan30Days(days=7), 1)
         app.add_screen(CalendarLessThan30Days(days=3), 2)
         app.add_screen(CalendarLessThan30Days(days=1), 3)
+        app.add_screen(ScheduleView(), 4)
 
         # When closing the settings menu, switch back to the app.
         self.settings.on_close = lambda: setattr(screenManager, "current", screenManager.screens[0].name)
@@ -145,9 +144,9 @@ class main(App):
             (self.appScreen.width, rectHeight)))
         self.appScreen.bind(size=lambda inst, size:
         setattr(self.appScreen.canvas.after.children[len(self.appScreen.canvas.after.children) - 1], "pos",
-                (-100000, -100000) if not inst.gradient else (0,
-                                                              self.appScreen.height - rectHeight - app.tabSize * app.floatBarRatio - app.topBarSize - app.tabMargin -
-                                                              app.tabSize * (1 - app.floatBarRatio))))
+            (-100000, -100000) if not inst.gradient else (0,
+            self.appScreen.height - rectHeight - app.tabSize * app.floatBarRatio - app.topBarSize - app.tabMargin -
+            app.tabSize * (1 - app.floatBarRatio))))
         settingsScreen = Screen(name="Settings")
 
         # Resize the settings menu on window resize
@@ -174,17 +173,17 @@ class main(App):
 
         # Button to go to the settings screen, changes color depending on what's behind it
         settingsButton = Button(pos=(Window.width - topBarSize, Window.height - topBarSize),
-                                size=(topBarSize, topBarSize),
-                                on_press=lambda self: setattr(self.parent.parent, "current",
-                                                              self.parent.parent.screens[1].name),
-                                background_normal="Settings.png", background_down="Settings.png",
-                                background_color=(0, 0, 0, 1) if not shouldUseWhiteText(
-                                    app.MonthButton.background_color) else (1, 1, 1, 1), size_hint=(None, None),
-                                mipmap=True)
+            size=(topBarSize, topBarSize),
+            on_press=lambda self: setattr(self.parent.parent, "current",
+                self.parent.parent.screens[1].name),
+            background_normal="Settings.png", background_down="Settings.png",
+            background_color=(0, 0, 0, 1) if not shouldUseWhiteText(
+                app.MonthButton.background_color) else (1, 1, 1, 1), size_hint=(None, None),
+            mipmap=True)
 
         # Move the settings button so it always stays in the top right corner
         Window.bind(on_resize=lambda self, _, __: setattr(settingsButton, "pos",
-                                                          (Window.width - topBarSize, Window.height - topBarSize)))
+            (Window.width - topBarSize, Window.height - topBarSize)))
 
         # Add the button to switch to the settings screen within the app
         self.appScreen.add_widget(settingsButton)

@@ -1,5 +1,4 @@
 from kivy.graphics.texture import Texture
-from kivy.uix.screenmanager import Screen
 
 # A sample of colors from https://www.google.com/design/spec/style/color.html
 PrimaryColors = (
