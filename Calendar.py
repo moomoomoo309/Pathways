@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from calendar import monthrange
 from datetime import date, timedelta
 from datetime import datetime
@@ -9,9 +11,12 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.widget import Widget
+from kivy.config import Config
+from copy import deepcopy
+from os.path import isfile
 from random import randint
 
-from kivy.properties import BooleanProperty, BoundedNumericProperty, ObjectProperty
+from kivy.properties import BooleanProperty, BoundedNumericProperty, ObjectProperty, DictProperty
 
 import Globals
 from AsyncImageButton import AsyncImageButton
@@ -34,11 +39,20 @@ class Calendar30Days(Widget):
     MonthStart = BoundedNumericProperty(0, min=0, max=6)
     # The date selected
     selectedDate = ObjectProperty(date.today())
+    # Replace these with pictures of your choice.
+    images = DictProperty({
+        3: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+            "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5"
+            "%2Fdancing-skeletons-liam-liberty.jpg&f=1",
+            "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
+            "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
+            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
+            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My "
+            "Pictures/RainbowPenguins.jpg"]})
 
     def __init__(self, **kwargs):
         super(Calendar30Days, self).__init__(**kwargs)  # I need this line for reasons.
-
-        self.getImageSource = kwargs["getImageSource"] if "getImageSource" in kwargs else lambda x: ""
+        self.originalImages = deepcopy(self.images)
         self.bind(selectedDate=lambda self, date: self.changeDate(date))
         self.bind(size=self._resize)
         self.cols = 7
@@ -59,7 +73,13 @@ class Calendar30Days(Widget):
         self.populate_body()
         self.add_widget(self.Layout)
 
+        Globals.onlineCallback.append(lambda val: setattr(self, "online", val))
+        Globals.randomImagesCallback.append(lambda val: setattr(self, "randomImages", val))
+        self.bind(randomImages=lambda inst, val: self.populate_body())
+        self.bind(online=lambda inst, val: self.populate_body())
+
     def populate_body(self):
+        _updateOnline(self,self.online)
         self.Layout.clear_widgets()
         # The grid is 7x7 because 7x6 isn't enough for months which start on Saturday
         if self.MonthLength + self.MonthStart < 36:
@@ -80,9 +100,9 @@ class Calendar30Days(Widget):
             self.Layout.add_widget(btn)
         for i in range(0, self.MonthStart):
             self.Layout.add_widget(
-                AsyncImageButton(source=self.getImageSource(None), allow_stretch=True,
+                AsyncImageButton(source=_getImageSource(self,None), allow_stretch=True,
                     keep_ratio=False,
-                    on_press=lambda x: setattr(x, "source", self.getImageSource(x.source))))
+                    on_press=lambda x: setattr(x, "source", _getImageSource(self,x.source))))
         # If the month doesn't start on a Monday, you need empty days.
 
         # Add all of the days
@@ -106,9 +126,9 @@ class Calendar30Days(Widget):
         for i in range(0, self.rows * self.cols - self.MonthLength - self.MonthStart - 7):
             # Subtract 7 to remove dayNames
             self.Layout.add_widget(
-                AsyncImageButton(source=self.getImageSource(None), allow_stretch=True,
+                AsyncImageButton(source=_getImageSource(self,None), allow_stretch=True,
                     keep_ratio=False,
-                    on_press=lambda x: setattr(x, "source", self.getImageSource(x.source))))
+                    on_press=lambda x: setattr(x, "source", _getImageSource(self,x.source))))
 
     def _resize(self, *args):  # Propogate resize to children
         self.Layout.size = self.size
@@ -125,20 +145,69 @@ class Calendar30Days(Widget):
     def openEventGUI(self, day):  # Not yet implemented
         pass
 
-def randomBackgroundImage(self):
-    images=("Circle.png","Circle2.png","Circle3.png","Settings.png")
-    return images[randint(0,len(images)-1)]
+
+def _updateOnline(self, *args):
+    for i in args:
+        if bool(i) is not None:
+            val = bool(i)
+            break
+    self.images = deepcopy(self.originalImages)
+    self.online = val
+    for i in self.images:
+        if isinstance(i, (int, long)):
+            j = 0
+            while j < len(self.images[i]):
+                if not self.online:
+                    if not isfile(self.images[i][j]):
+                        self.images[i].remove(self.images[i][j])
+                    else:
+                        j += 1
+                else:
+                    if not "://" in self.images[i][j] and not isfile(self.images[i][j]):
+                        self.images[i].remove(self.images[i][j])
+                    else:
+                        j += 1
+
+
+def _getImageSource(self, blockedImage):  # Changes the images on the empty days on click
+    if self.randomImages and self.startDate.month - 1 in self.images is not None and len(self.images[
+                self.startDate.month - 1]) > 0:
+        img = self.images[self.startDate.month - 1][randint(0, len(self.images[self.startDate.month - 1]) - 1)]
+        if (len(self.images[self.startDate.month - 1]) > 1 and blockedImage is not None) or img is None:
+            while img == blockedImage or img is None:
+                img = self.images[self.startDate.month - 1][randint(0, len(self.images[self.startDate.month - 1]) - 1)]
+        elif len(self.images[self.startDate.month - 1]) <= 1:
+            return img
+        if isfile(img) or "://" in img:
+            return img
+    return "CalendarInactive.png"
 
 class CalendarLessThan30Days(Widget):
     # Number of days in this calendar
     days = BoundedNumericProperty(7, min=1, max=7)
     # Height of each event
     eventHeight = 65
+    randomImages=BooleanProperty(True)
+    online=BooleanProperty(False)
     originalStartDate = ObjectProperty(date.today())
-    getImageSource = ObjectProperty(None)
+    # Replace these with pictures of your choice.
+    images = DictProperty({
+        3: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
+            "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5"
+            "%2Fdancing-skeletons-liam-liberty.jpg&f=1",
+            "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
+            "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
+            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
+            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My "
+            "Pictures/RainbowPenguins.jpg"]})
 
     def __init__(self, **kwargs):
         super(CalendarLessThan30Days, self).__init__(**kwargs)
+        self.startDate = self.originalStartDate
+        Globals.onlineCallback.append(lambda val: setattr(self, "online", val))
+        Globals.randomImagesCallback.append(lambda val: setattr(self, "randomImages", val))
+        self.bind(randomImages=lambda inst, val: setattr(self.backgroundImage, "source", "CalendarInactive.png"))
+        self.bind(online=lambda inst, val: setattr(self.backgroundImage, "source", _getImageSource(self,self.backgroundImage.source)))
         self.dayBarLayout = GridLayout(rows=1, spacing=1, height=75,
             size_hint_y=None)  # Layout for the dayBar, if it exists, and body
         self.dayList = []  # Has layout for each day
@@ -149,24 +218,32 @@ class CalendarLessThan30Days(Widget):
         self.bodyLayout = GridLayout(rows=1, width=Window.width, size_hint_y=None, height=2048)  # Hourbar & inner body
         self.innerBodyLayout = GridLayout(rows=1)  # Contains the actual body
         self.bodyView = ScrollView(size_hint_y=None, width=Window.width, scroll_wheel_distance=75)  # Scrollable bits, dayBar and actual body
-        self.backgroundImage = Rectangle(source=randomBackgroundImage(self), size=self.innerLayout.size, pos=self.innerLayout.pos)
+        self.backgroundImage = Rectangle(source=_getImageSource(self,None), size=self.innerLayout.size, pos=self.innerLayout.pos)
+        def updateBackgroundImage():
+            if self.randomImages:
+                while self.backgroundImage.source in (None,"CalendarInactive.png"):
+                    self.backgroundImage.source = _getImageSource(self, None)
+            else:
+                self.backgroundImage.source = "CalendarInactive.png"
+        updateBackgroundImage()
+        self.bind(randomImages=lambda inst,val: updateBackgroundImage())
         self.background = Rectangle(size=(self.width, self.bodyLayout.height), pos=(self.bodyView.x, -1000000))
 
         def getBackgroundHeight(self, inst):
+            self.canvas.before.clear()
             if inst.scroll_y > 1.001:
-                self.canvas.before.add(Color(1, 1, 1, 1))
+                self.canvas.before.add(Color(1, 1, 1, 1) if self.backgroundImage.source!="CalendarInactive.png" else Color(0, 0, 0, 1))
                 self.canvas.before.add(self.backgroundImage)
                 self.canvas.before.add(Color(0, 0, 0, 1))
                 self.canvas.before.add(self.background)
                 return -self.background.size[1] + self.bodyView.height - (inst.scroll_y - 1) * (self.bodyLayout.height - self.bodyView.height)
             elif inst.scroll_y < 0:
-                self.canvas.before.add(Color(1, 1, 1, 1))
+                self.canvas.before.add(Color(1, 1, 1, 1) if self.backgroundImage.source!="CalendarInactive.png" else Color(0, 0, 0, 1))
                 self.canvas.before.add(self.backgroundImage)
                 self.canvas.before.add(Color(0, 0, 0, 1))
                 self.canvas.before.add(self.background)
                 return -inst.scroll_y * (self.bodyLayout.height - self.bodyView.height)
             else:
-                self.canvas.before.clear()
                 return -1000000
 
         self.bind(width=lambda inst, width: setattr(self.background, "size", (width, self.background.size[1])))

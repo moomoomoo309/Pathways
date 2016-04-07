@@ -3,6 +3,7 @@ from datetime import date, datetime
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
+from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color
 from kivy.uix.button import Button
@@ -31,21 +32,6 @@ MonthNames = (
 
 
 class TabView(Widget):
-    # Replace these with pictures of your choice.
-    images = DictProperty({
-        3: ["http://images2.wikia.nocookie.net/__cb20120728022911/monsterhigh/images/1/1d/Skeletons.jpg",
-            "https://images.duckduckgo.com/iu/?u=http%3A%2F%2Fimages.fineartamerica.com%2Fimages-medium-large-5"
-            "%2Fdancing-skeletons-liam-liberty.jpg&f=1",
-            "http://ih1.redbubble.net/image.24320851.9301/flat,550x550,075,f.jpg",
-            "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
-            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
-            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My "
-            "Pictures/RainbowPenguins.jpg"]})
-
-    # Use random images to fill the empty days of the calendar
-    randomImages = BooleanProperty(True)
-    # Get images from the internet
-    online = BooleanProperty(True)
     # The size of the top bar
     topBarSize = BoundedNumericProperty(75, min=0)
     # The size of the tabs vertically.
@@ -88,28 +74,14 @@ class TabView(Widget):
 
         # Forces the tab to be used to be this one.
         self.overrideTab = None
-        self.online=True
+
+        self.randomImages = Globals.config.getboolean("Real Settings", "randomImages")
 
         self.size = kwargs["size"] if "size" in kwargs else (100, 100)
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
-        # Remove any images which don't exist or are online if online is false
-        for i in self.images:
-            if isinstance(i, (int, long)):
-                j = 0
-                while j < self.images[i].__len__():
-                    if not self.online:
-                        if not isfile(self.images[i][j]):
-                            self.images[i].remove(self.images[i][j])
-                        else:
-                            j += 1
-                    else:
-                        if not ("://" in self.images[i][j]) and not isfile(self.images[i][j]):
-                            self.images[i].remove(self.images[i][j])
-                        else:
-                            j += 1
         self.carousel = FloatCarousel(
             size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize), direction="left",
-            min_move=.1, screenNames=self.screenNames, scroll_timeout=200, scroll_distance=10)
+            min_move=.1, screenNames=self.screenNames, scroll_timeout=200, scroll_distance=10, loop=True)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=str(MonthNames[self.CurrentMonth]) + " " + str(date.today().year))
@@ -249,29 +221,18 @@ class TabView(Widget):
         self.add_widget(self.FloatBar)
         # Add the float bar
 
-    def _getImageSource(self, blockedImage):  # Changes the images on the empty days on click
-        if self.randomImages and self.CurrentMonth in self.images is not None and len(self.images[
-            self.CurrentMonth]) > 0:
-            img = self.images[self.CurrentMonth][randint(0, len(self.images[self.CurrentMonth]) - 1)]
-            if len(self.images[self.CurrentMonth]) > 1 and blockedImage is not None:
-                while img == blockedImage:
-                    img = self.images[self.CurrentMonth][randint(0, len(self.images[self.CurrentMonth]) - 1)]
-            elif len(self.images[self.CurrentMonth]) <= 1:
-                return img
-            if isfile(img) or "://" in img:
-                return img
-        return "CalendarInactive.png"
-
     def changeDate(self, date):
         showGradient(self)
-        self.remove_widget(self.datePicker)
+        if hasattr(self, "datePicker"):
+            self.remove_widget(self.datePicker)
         for i in self.screenList:
             if hasattr(i.children[0], "changeDate"):
                 i.children[0].changeDate(date)
 
         self.date = date
-        self.MonthButton.text = self.MonthButton.text[0:len("[color=000000][size=XX]")] + MonthNames[
-            date.month - 1] + " " + str(date.year) + "[/size][/color]"
+        if hasattr(self, "datePicker"):
+            self.MonthButton.text = self.MonthButton.text[0:len("[color=000000][size=XX]")] + MonthNames[
+                date.month - 1] + " " + str(date.year) + "[/size][/color]"
 
 
 def redraw(self):
@@ -454,10 +415,11 @@ def genericResize(*args, **kwargs):  # Generic method to resize any object(s) wi
 
 
 def makeCalWidget(self):  # Initializes the Calendar grid
-    return Calendar30Days(MonthLength=monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
+    return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
         MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
-        size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin), online=self.online,
-        randomImages=self.randomImages, getImageSource=self._getImageSource)
+        size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
+        randomImages=Globals.config.getboolean("Real Settings", "randomImages"),
+        online=Globals.config.getboolean("Real Settings", "online"))
 
 
 def hideGradient(self):
@@ -475,6 +437,8 @@ def showGradient(self):
         if isinstance(screen, TabView):
             app = screen
         screen = screen.parent
+    if app is None:
+        return
     screen.gradient = False
     rectHeight = 20
     screen.canvas.after.children[len(screen.canvas.after.children) - 1].pos = (0,
@@ -484,7 +448,7 @@ def showGradient(self):
 
 class tabview(App):
     def build(self):
-        app = TabView(size=(Window.width, Window.height), randomImages=True, online=True)
+        app = TabView(size=(Window.width, Window.height))
         Window.bind(on_resize=partial(genericResize, objs=app, fct=lambda: Window.size))
         app.add_screen(makeCalWidget(app))
         return app
