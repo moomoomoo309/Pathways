@@ -1,36 +1,15 @@
 [
   {
-    "type": "slider",
-    "desc": "Slider",
-    "title": "Slider Example",
-    "section": "Examples",
-    "key": "numeric"
-  },
-  {
-    "type": "numeric",
-    "desc": "numeric",
-    "title": "Numeric Example",
-    "section": "Examples",
-    "key": "num"
+    "type": "bool",
+    "title": "Random Images",
+    "section": "Real Settings",
+    "key": "randomImages"
   },
   {
     "type": "bool",
-    "title": "Checkbox Example",
-    "section": "Examples",
-    "key": "checkbox"
-  },
-  {
-    "type": "options",
-    "title": "List example",
-    "section": "Examples",
-    "key": "list",
-    "options": [
-      "Option 1",
-      "Option 2",
-      "Option 3",
-      "Option 4",
-      "Option 5"
-    ]
+    "title": "Get Images From the Internet",
+    "section": "Real Settings",
+    "key": "online"
   },
   {
     "type": "colorList",

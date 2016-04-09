@@ -24,14 +24,15 @@ class ScheduleView(Widget):
         self.add_widget(self.bodyView)
         self.bodyView.add_widget(self.outerLayout)
         self.outerLayout.add_widget(dateHeader())
-        self.outerLayout.add_widget(Image(source="Circle.png", keep_ratio=False, allow_stretch=True))
+        layout= BoxLayout()
+        self.outerLayout.add_widget(layout)
+        layout.add_widget(Image(source="Circle.png", keep_ratio=False, allow_stretch=True))
 
 
 class dateHeader(BoxLayout):
-    orientation = "horizontal"
-
     def __init__(self, **kwargs):
         super(dateHeader, self).__init__(**kwargs)
+        self.orientation='horizontal'
         self.date = kwargs["date"] if "date" in kwargs else date.today()
         self.size_hint_y = .1
         self.label = Label(text=str(self.date), color=(1, 1, 1, 1), font_size=36, text_size=(None, None),

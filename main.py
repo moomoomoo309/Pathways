@@ -26,7 +26,8 @@ def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
         MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
         size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
-        online=self.online, randomImages=self.randomImages, getImageSource=self._getImageSource)
+        randomImages=Globals.config.getboolean("Real Settings", "randomImages"),
+        online=Globals.config.getboolean("Real Settings", "online"))
 
 
 class SettingSlider(SettingItem):
@@ -97,6 +98,7 @@ class main(App):
 
     def build_config(self, config):
         Globals.redraw = []
+        Globals.config = config
 
         # Instantiate the settings menu
         self.settings = Settings()
@@ -105,24 +107,35 @@ class main(App):
         self.settings.register_type("colorList", SettingColorList)
 
         # Write defaults to the config if it is missing any fields
+        def randomImagesCallback(section, key, val):
+            Globals.randomImages=int(val)==1
+            for i in Globals.randomImagesCallback:
+                i(int(val)==1)
+
+        def onlineCallback(section, key, val):
+            Globals.online=int(val)==1
+            for i in Globals.onlineCallback:
+                i(int(val)==1)
+
         config.read(self.get_application_config())
-        config.adddefaultsection("Examples")
         config.adddefaultsection("Real Settings")
-        config.setdefault("Examples", "num", 0)
-        config.setdefault("Examples", "numeric", 50)
-        config.setdefault("Examples", "Checkbox", False)
-        config.setdefault("Examples", "List", "Option 1")
+        config.setdefault("Real Settings", "randomImages", True)
+        config.add_callback(randomImagesCallback, "Real Settings", "randomImages")
+        config.setdefault("Real Settings", "online", True)
+        config.add_callback(onlineCallback, "Real Settings", "online")
         config.setdefault("Real Settings", "Primary Color", PrimaryColors[0])
-        config.add_callback("Real Settings", "Primary Color", updatePrimaryColor)
         config.write()
 
         # Set up the structure of the actual menu
-        self.settings.add_json_panel("Example settings", config, "ExampleSettings.json")
+        self.settings.add_json_panel("Settings", config, "ExampleSettings.json")
 
     def build(self):
+        Globals.randomImages=Globals.config.getboolean("Real Settings","randomImages")
+        Globals.online=Globals.config.getboolean("Real Settings", "online")
         topBarSize = 75
         # Put the calendar on the Month view
         app = TabView(size=(Window.width, Window.height), randomImages=True, online=False, topBarSize=topBarSize)
+        Globals.tabview = app
         app.add_screen(makeCalWidget(app))
         app.add_screen(CalendarLessThan30Days(days=7), 1)
         app.add_screen(CalendarLessThan30Days(days=3), 2)

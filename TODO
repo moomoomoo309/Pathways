@@ -7,7 +7,6 @@ DONE 3) Write the settings menu (Kivy has built-in stuff for this! Look for it!)
 4) Figure out how to package the app for Android AND iOS (Buildozer is a bit finnicky, unfortunately.)
 
 DONE 5) Unify the UI (Use the same colors across the whole app, from the options, using colors from the Material Design docs http://www.materialpalette.com/ https://www.google.com/design/spec/style/color.html )
-5.5) Make the UI on iOS look like an iOS app
 
 6) After 1-4 are done (5 optional), get feedback from Sara, because she's awesome.
 

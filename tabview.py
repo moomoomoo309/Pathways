@@ -1,4 +1,4 @@
-from calendar import monthrange
+from calendar import monthrange, calendar
 from datetime import date, datetime
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
@@ -81,7 +81,7 @@ class TabView(Widget):
         self.pos = kwargs["pos"] if "pos" in kwargs else (0, 0)
         self.carousel = FloatCarousel(
             size=(self.size[0], self.size[1] - self.topBarSize - self.tabMargin - self.tabSize), direction="left",
-            min_move=.1, screenNames=self.screenNames, scroll_timeout=200, scroll_distance=10, loop=True)
+            min_move=.1, screenNames=self.screenNames, scroll_timeout=200, scroll_distance=5)
         # Put everything in a GridLayout
         self.topBarBackground = InstructionGroup()
         self._drawGui(Month=str(MonthNames[self.CurrentMonth]) + " " + str(date.today().year))
