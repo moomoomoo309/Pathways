@@ -23,6 +23,7 @@ import Globals
 from AsyncImageButton import AsyncImageButton
 from ColorUtils import shouldUseWhiteText
 from Event import Event
+from eventGUI import eventGUI
 
 
 class Calendar30Days(Widget):
@@ -41,12 +42,13 @@ class Calendar30Days(Widget):
     # The date selected
     selectedDate = ObjectProperty(date.today())
     # Replace these with pictures of your choice.
+
     images = DictProperty({
-        3: ["https://38.media.tumblr.com/e357a10fc4b23221973d091366470f4b/tumblr_mfay513hQr1r77xtpo1_250.gif",
-            "http://i0.kym-cdn.com/photos/images/facebook/000/376/354/3dd.gif",
-            "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
-            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
-            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
+        3: ["https://www.colourbox.com/preview/5665824-a-school-building.jpg",
+            "http://cache-blog.credit.com/wp-content/uploads/2013/04/student-loans-ts-1360x860.jpg",
+            "https://lh3.googleusercontent.com/-wrtKyuFuGH8/VifauF9--7I/AAAAAAAAAF0/0yBwTZCpD60/w1000-h1000/Pepe_rare.png",
+            "https://pbs.twimg.com/profile_images/565528824289300480/wIGnl73l.jpeg"]})
+
 
     def __init__(self, **kwargs):
         super(Calendar30Days, self).__init__(**kwargs)  # I need this line for reasons.
@@ -171,16 +173,16 @@ def _getImageSource(self, blockedImage):  # Changes the images on the empty days
     if Globals.randomImages and self.startDate.month - 1 in self.images is not None and len(self.images[
                 self.startDate.month - 1]) > 0:
         img = self.images[self.startDate.month - 1][randint(0, len(self.images[self.startDate.month - 1]) - 1)]
-        if len(self.images[self.startDate.month - 1]) > 1 or img is None:
+        if len(self.images[self.startDate.month - 1]) >= 1 or img is None:
             iterations = 0
-            while not isfile(img) and not (Globals.online and "://" in img):
+            while img==blockedImage or (not isfile(img) and not (Globals.online and "://" in img)):
                 iterations += 1
                 img = self.images[self.startDate.month - 1][randint(0, len(self.images[self.startDate.month - 1]) - 1)]
                 if iterations > 100:
                     return "CalendarInactive.png"
                 elif isfile(img) or (Globals.online and "://" in img):
                     return img
-    if isfile(img) or (Globals.online and "://" in img):
+    if img is not None and (isfile(img) or (Globals.online and "://" in img)):
         return img
     return "CalendarInactive.png"
 
@@ -195,18 +197,18 @@ class CalendarLessThan30Days(Widget):
     originalStartDate = ObjectProperty(date.today())
     # Replace these with pictures of your choice.
     images = DictProperty({
-        3: ["https://38.media.tumblr.com/e357a10fc4b23221973d091366470f4b/tumblr_mfay513hQr1r77xtpo1_250.gif",
-            "http://i0.kym-cdn.com/photos/images/facebook/000/376/354/3dd.gif",
-            "http://icons.iconseeker.com/png/fullsize/creeps/skeleton-1.png",
-            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/simple_skeleton.png",
-            "//hs4.hs.ptschools.org/data_student$/2016/My_Documents/1009877/Documents/My Pictures/RainbowPenguins.jpg"]})
+        3: ["https://www.colourbox.com/preview/5665824-a-school-building.jpg",
+            "http://cache-blog.credit.com/wp-content/uploads/2013/04/student-loans-ts-1360x860.jpg",
+            "https://lh3.googleusercontent.com/-wrtKyuFuGH8/VifauF9--7I/AAAAAAAAAF0/0yBwTZCpD60/w1000-h1000/Pepe_rare.png",
+            "https://pbs.twimg.com/profile_images/565528824289300480/wIGnl73l.jpeg"]})
 
     def __init__(self, **kwargs):
         super(CalendarLessThan30Days, self).__init__(**kwargs)
         self.startDate = self.originalStartDate
         Globals.onlineCallback.append(lambda val: setattr(self, "online", val))
         Globals.randomImagesCallback.append(lambda val: setattr(self, "randomImages", val))
-        Globals.randomImagesCallback.append(lambda val: setattr(self.backgroundImage, "source", "CalendarInactive.png"))
+        Globals.randomImagesCallback.append(
+            lambda val: setattr(self.backgroundImage, "source", _getImageSource(self, self.backgroundImage.source)))
         Globals.onlineCallback.append(
             lambda val: setattr(self.backgroundImage, "source", _getImageSource(self, self.backgroundImage.source)))
         self.dayBarLayout = GridLayout(rows=1, spacing=1, height=75,
@@ -214,6 +216,8 @@ class CalendarLessThan30Days(Widget):
         self.dayList = []  # Has layout for each day
         self.outerLayout = BoxLayout(orientation="vertical", size=Window.size,
             spacing=1)  # Contains the top bar "head" and body.
+        self.eventGUI=eventGUI(height=Window.height*.95)
+        Window.bind(height=lambda inst,height: setattr(self.eventGUI,"height",height*.85))
         self.innerLayout = BoxLayout(orientation="horizontal", size=Window.size)  # Sizes the bodyView
         self.hourBar = BoxLayout(orientation="vertical", size=Window.size, size_hint_x=.2)  # Has the time being viewed
         self.bodyLayout = GridLayout(rows=1, width=Window.width, size_hint_y=None, height=2048)  # Hourbar & inner body
@@ -222,7 +226,7 @@ class CalendarLessThan30Days(Widget):
             scroll_wheel_distance=75)  # Scrollable bits, dayBar and actual body
         self.background = Rectangle(size=(self.width, self.bodyLayout.height), pos=(self.bodyView.x, -1000000))
         self.backgroundImage = AsyncImage(size=self.innerLayout.size, pos=self.innerLayout.pos,
-            source=_getImageSource(self, None), allow_stretch=True, keep_ratio=False, anim_delay=1./5.)
+            source=_getImageSource(self, None), allow_stretch=True, keep_ratio=False, anim_delay=1. / 7.5)
         self.backgroundImage.visible = self.backgroundImage.source != "CalendarInactive.png"
         self.backgroundImage.showHide = lambda inst, pos: setattr(self.backgroundImage, "pos",
             pos if self.backgroundImage.visible else (-100000, -100000))
@@ -246,7 +250,7 @@ class CalendarLessThan30Days(Widget):
                 self.backgroundImage.overlay.add(Color(0, 0, 0, 1))
                 self.backgroundImage.overlay.add(self.background)
                 return -self.background.size[1] + self.bodyView.height - (inst.scroll_y - 1) * (
-                self.bodyLayout.height - self.bodyView.height)
+                    self.bodyLayout.height - self.bodyView.height)
             elif inst.scroll_y < 0:
                 self.backgroundImage.visible = self.backgroundImage.source != "CalendarInactive.png"
                 self.backgroundImage.showHide(self.backgroundImage, self.bodyView.pos)
@@ -364,7 +368,7 @@ class CalendarLessThan30Days(Widget):
             event = Event(size_hint_y=float(self.eventHeight) / self.bodyLayout.height, x=1,
                 pos_hint={"center_y": timeToPos(datetime.now())},
                 name="TestButton" + str(i), background_normal="CalendarInactive.png",
-                background_down="CalendarInactive.png", background_color=Globals.PrimaryColor,
+                background_down="CalendarInactive.png", fullSize=True, description="test test test test test test test",
                 color=(1, 1, 1, 1) if shouldUseWhiteText(Globals.PrimaryColor) else (0, 0, 0, 1),
                 on_press=self.openEventGUI)
             event.bind(width=lambda inst, width: setattr(inst, "width", inst.parent.width - 1))
@@ -387,4 +391,4 @@ class CalendarLessThan30Days(Widget):
             self.dayBarLayout.add_widget(self.weekButton, len(self.dayBarLayout.children))
 
     def openEventGUI(self, event):  # Not yet implemented
-        pass
+        self.eventGUI.open()

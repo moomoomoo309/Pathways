@@ -1,23 +1,23 @@
 from calendar import monthrange, calendar
 from datetime import date, datetime
+from os.path import isfile
+from random import randint
+
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color
+from kivy.graphics.instructions import InstructionGroup
+from kivy.graphics.vertex_instructions import Rectangle
+from kivy.properties import AliasProperty, BoundedNumericProperty, BooleanProperty, DictProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.widget import Widget
-from os.path import isfile
-from random import randint
-
-from kivy.graphics.instructions import InstructionGroup
-from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, BooleanProperty, DictProperty, partial
 
 import Globals
 from Calendar import Calendar30Days
@@ -427,7 +427,8 @@ def hideGradient(self):
     while screen.parent is not None and not isinstance(screen, Screen):
         screen = screen.parent
     screen.gradient = False
-    screen.canvas.after.children[len(screen.canvas.after.children) - 1].pos = (-100000, -100000)
+    gradient=screen.canvas.after.children[len(screen.canvas.after.children) - 1]
+    gradient.pos = (-gradient.size[0],-gradient.size[1])
 
 
 def showGradient(self):

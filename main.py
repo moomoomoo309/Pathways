@@ -12,6 +12,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen, ScreenManager, NoTransition
 from kivy.uix.settings import Settings, SettingItem
 from kivy.uix.slider import Slider
+import pytz # Don't forget to include this module!
 
 from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
 
