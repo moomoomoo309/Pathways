@@ -2,10 +2,12 @@ from __future__ import print_function
 
 from datetime import datetime, timedelta
 
+from kivy.lang import Builder
 from kivy.properties import ObjectProperty, StringProperty, ListProperty, BooleanProperty
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.popup import Popup
 from tzlocal import get_localzone
 
 import Globals
@@ -79,6 +81,9 @@ class Event(BoxLayout, ButtonBehavior):
     def isNow(self, time):
         return self.start < time < self.end
 
+    def on_press(self, *args):
+        EventGUI(lambda: self).open()
+
     def asDict(self):
         event = {
             "summary": self.description,
@@ -105,3 +110,24 @@ class Event(BoxLayout, ButtonBehavior):
             event["end"]["date"] = event["end"]["dateTime"]
             event["end"].pop("dateTime")
         return event
+
+class EventGUI(Popup):
+    eventReference=ObjectProperty()
+    def __init__(self,*args,**kwargs):
+        if len(args)>0:
+            self.eventReference=args[0]
+        else:
+            self.eventReference=kwargs["eventReference"]
+        super(EventGUI,self).__init__(**kwargs)
+        print(self.eventReference)
+
+class DoubleLabel(BoxLayout):
+    firstText=StringProperty("")
+    secondText=StringProperty("")
+    def __init__(self,*args,**kwargs):
+        super(DoubleLabel,self).__init__(**kwargs)
+        if len(args)>1:
+            self.firstText=args[0]
+            self.secondText=args[1]
+
+Builder.load_file("./Event.kv")

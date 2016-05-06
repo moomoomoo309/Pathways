@@ -1,0 +1,194 @@
+#:kivy 1.9
+
+#:import calendar calendar
+#:import date datetime.date
+#:import datetime datetime.datetime
+#:import MonthCyclicRoulette eventCreationGUI.MonthCyclicRoulette
+#:import DayCyclicRoulette eventCreationGUI.DayCyclicRoulette
+#:import Widget kivy.uix.widget.Widget
+#:import CircularTimePicker circulardatetimepicker.CircularTimePicker
+#:import get_localzone tzlocal.get_localzone
+#:import Button kivy.uix.button.Button
+
+<eventCreationGUI@Modalview>:
+    start: startDialog.date
+    startTimezone: get_localzone().zone
+    end: endDialog.date
+    endTimezone: get_localzone().zone
+    description: descriptionDialog.text
+    name: nameDialog.text
+    location: locationDialog.text
+    repeat: repeatDialog.output if repeatDialog.output is not None else ""
+    submitted: False
+    size_hint_y: .9
+    size_hint_x: .95
+    on_open: setattr(self,"submitted", False)
+    id: gui
+
+    BoxLayout:
+        orientation: "vertical"
+        id: outerLayout
+
+        Label:
+            halign: "center"
+            valign: "middle"
+            size_hint_y: .65
+            width: gui.width
+            text: "Create an event"
+
+        Divider:
+            id: div0
+
+        InputLine:
+            id: nameDialog
+            text: "Name"
+
+        Divider:
+            id: div1
+
+        Picker:
+            id: startDialog
+            text: "Start time"
+
+        Divider:
+            id: div2
+
+        Picker:
+            id: endDialog
+            text: "End time"
+            minute_offset: 15
+
+        Divider:
+            id: div3
+
+        InputLine:
+            id: descriptionDialog
+            text: "Description"
+
+        Divider:
+            id: div4
+
+        InputLine:
+            id: locationDialog
+            text: "Location"
+
+        Divider:
+            id: div5
+
+        repeatPrompt:
+            id: repeatDialog
+
+        Button:
+            id: submit
+            text: "Submit"
+            on_press: gui.submit()
+
+<InputLine@BoxLayout>:
+    orientation: "horizontal"
+    id: layout
+    output: textinput.text
+
+    Label:
+        size: self.texture_size
+        text: layout.text
+        size_hint_x: .25
+
+    TextInput:
+        id: textinput
+
+
+<Picker@BoxLayout>:
+    orientation: "horizontal"
+    id: layout
+    size_hint_y: 3
+    date: datetime(year=yearpicker.selected_value, month=int(abs(monthpicker.selected_value))%max(len(monthpicker.values),1)+1, day=daypicker.selected_value, hour=(timepicker.hours)%12+(12 if not timepicker._am else 0), minute=timepicker.minutes)
+    Label:
+        halign: "center"
+        valign: "middle"
+        size_hint_x: .175
+        size: self.texture_size
+        text: layout.text+ "\n" + monthpicker.values[int(abs(monthpicker.selected_value))%max(len(monthpicker.values),1)] +" "+ str(daypicker.selected_value)+", "+str(yearpicker.selected_value) + "\n" + ("0" if (timepicker.hours-1)%12+1<10 else "")+str((timepicker.hours-1)%12+1)+":"+("0" if timepicker.minutes<10 else "")+str(timepicker.minutes)+" "+("AM" if timepicker._am else "PM")
+
+    MonthCyclicRoulette:
+        id: monthpicker
+        background_color: .1568,.1568,.1568,1
+        selected_value: date.today().month-1
+        zero_indexed: True
+        int_valued: True
+        density: 5
+        size_hint_x: .2
+
+    DayCyclicRoulette:
+        id: daypicker
+        background_color: .1568,.1568,.1568,1
+        selected_value: date.today().day
+        cycle: calendar.monthrange(yearpicker.selected_value, int(abs(monthpicker.selected_value)%len(monthpicker.values))+1)[1]
+        density: 5
+        size_hint_x: .2
+
+    CyclicRoulette:
+        id: yearpicker
+        background_color: .1568,.1568,.1568,1
+        cycle: date.today().year+50
+        selected_value: date.today().year
+        density: 5
+        size_hint_x: .2
+
+    CircularTimePicker:
+        id: timepicker
+        minutes: (datetime.now().minute+layout.minute_offset)%60
+        _am: datetime.now().hour<=12
+        hours: datetime.now().hour+(1 if (datetime.now().minute+layout.minute_offset)>59 else 0)
+        size_hint_x: .1
+
+<Divider@Widget>
+    size_hint_y: None
+    thickness: 1
+    margin: 1
+    height: self.thickness + 2 * self.margin
+    color: 0.1843137254902,0.65490196078431,0.83137254901961
+    canvas:
+        Color:
+            rgb: self.color
+        Rectangle:
+            pos: self.x + self.margin, self.y + self.margin + 1
+            size: self.width - 2 * self.margin , self.thickness
+
+<repeatPrompt@BoxLayout>:
+    id: repeatDialog
+    orientation: "horizontal"
+    size_hint_y: 2
+    output: str(every.selected_value)+" "+str(int(abs(unitpicker.selected_value))%max(len(unitpicker.values),1))
+
+    CheckBox:
+        id: checkbox
+        size_hint_x: None
+        width: 20
+        on_active: repeatDialog.on_active(self.active)
+
+    Button:
+        text: "Repeat every..."
+        id: label
+        background_normal: ""
+        background_down: ""
+        background_color: .1568,.1568,.1568,1
+        on_press: checkbox._toggle_active()
+        size: self.texture_size
+        size_hint_x: .175
+
+    CyclicRoulette:
+        id: every
+        background_color: .1568,.1568,.1568,1
+        cycle: 100
+        selected_value: 1
+        density: 2.5
+        size_hint_x: .5
+
+    TimeCyclicRoulette:
+        background_color: .1568,.1568,.1568,1
+        id: unitpicker
+        int_valued: True
+        selected_value: 5
+        cycle: len(self.values)
+        density: 2.5
+        size_hint_x: .5

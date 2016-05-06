@@ -1,0 +1,70 @@
+#:import Divider eventCreationGUI.Divider
+
+<EventGUI@Popup>:
+    id: popup
+    size_hint_y: .65
+    size_hint_x: .95
+    title: popup.eventReference().name
+
+    BoxLayout:
+        orientation: "vertical"
+        id: layout
+
+        DoubleLabel:
+            id: descriptionLabel
+            firstText: "Description"
+            secondText: popup.eventReference().description
+
+        Divider:
+
+        DoubleLabel:
+            id: startLabel
+            firstText: "Start time"
+            secondText: popup.eventReference().start.strftime("%B %d, %Y\n%I:%M %p")
+
+        Divider:
+
+        DoubleLabel:
+            id: endLabel
+            firstText: "End time"
+            secondText: popup.eventReference().end.strftime("%B %d, %Y\n%I:%M %p")
+
+        Divider:
+
+        DoubleLabel:
+            id: locationLabel
+            firstText: "Location"
+            secondText: popup.eventReference().location
+
+        Divider:
+
+        DoubleLabel:
+            id: repeatLabel
+            firstText: "Repeat"
+            secondText: popup.eventReference().repeat
+
+        Button:
+            size_hint_y: .35
+            text: "Close"
+            id: dismiss
+            on_press: popup.dismiss()
+
+
+
+<DoubleLabel@BoxLayout>:
+    id: layout
+    Label:
+        id:first
+        text: layout.firstText
+        size_hint_x: .25
+        halign: "center"
+
+    Divider:
+        size_hint_x: None
+        width: 3
+        thickness: first.height
+
+    Label:
+        id:second
+        text: layout.secondText
+        halign: "center"

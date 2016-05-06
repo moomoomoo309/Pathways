@@ -43,9 +43,9 @@ class TabView(Widget):
     # How much of the tab bar should be taken up by the float bar
     floatBarRatio = BoundedNumericProperty(float(1) / 8, min=0, max=1)
     # Color of the tab bar
-    tabBarColor = lambda x: Globals.PrimaryColor
+    tabBarColor = lambda _: Globals.PrimaryColor
     # Color of the thin bar below the tabs on the tab bar
-    floatBarColor = lambda x: Globals.PrimaryColor
+    floatBarColor = lambda _: Globals.PrimaryColor
     # The tab currently selected
     currentTab = BoundedNumericProperty(4, min=0)
 
@@ -102,7 +102,7 @@ class TabView(Widget):
         Globals.redraw.append((self, redraw))
 
     # Redraw the whole thing on resize
-    def resize(self, width, height):
+    def resize(self):
         self.topBarBackground.clear()
         self._drawTopBarBackground()
         for i in self.children:  # Reset the size of the all the widgets that make up the top bar
