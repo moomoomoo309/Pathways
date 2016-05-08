@@ -1,11 +1,16 @@
 from __future__ import print_function
 
 from calendar import monthrange
+from copy import deepcopy
 from datetime import date, timedelta
 from datetime import datetime
+from os.path import isfile
+from random import randint
+
 from kivy.core.window import Window
 from kivy.graphics import Rectangle, Color
-from kivy.graphics.instructions import InstructionGroup, Canvas
+from kivy.graphics.instructions import InstructionGroup
+from kivy.properties import BooleanProperty, BoundedNumericProperty, ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
@@ -14,12 +19,6 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.widget import Widget
-from kivy.uix.behaviors import ButtonBehavior
-from copy import deepcopy
-from os.path import isfile
-from random import randint
-
-from kivy.properties import BooleanProperty, BoundedNumericProperty, ObjectProperty, DictProperty
 
 import Globals
 from AsyncImageButton import AsyncImageButton
@@ -50,22 +49,20 @@ class Calendar30Days(Widget):
         self.originalImages = deepcopy(Globals.images)
         self.bind(selectedDate=lambda self, date: self.changeDate(date))
         self.bind(size=self._resize)
-        self.cols = 7
-        self.rows = 7  # Extra row for dayNames
-
-        # The grid is 7x7 because 7x6 isn't enough for months which start on Saturday
-        if self.MonthLength + self.MonthStart < 36:
-            self.rows = 6
 
         # Keep it within its bounds.
         self.spacing = 1
 
         # Put the children in a gridLayout
-        self.Layout = GridLayout(pos=self.pos, size=self.size, rows=self.rows, cols=self.cols, spacing=self.spacing)
+        self.Layout = GridLayout(pos=self.pos, size=self.size, cols=7, spacing=self.spacing)
         self.Layout.bind(rows=lambda inst, rows: setattr(self, "rows", rows))
 
         # Populate the body and add the layout to the widget
         self.populate_body()
+        btn=Button(size=self.size,on_press=lambda inst: print("hi"), background_normal="", background_down="",
+            background_color=(0,0,0,0))
+        self.bind(size=lambda inst,size: setattr(btn,"size",size))
+        self.add_widget(btn)
         self.add_widget(self.Layout)
 
         Globals.onlineCallback.append(lambda val: setattr(self, "online", val))
@@ -104,12 +101,12 @@ class Calendar30Days(Widget):
         for i in range(0, self.MonthLength):
             btn = Button(texture=None, background_normal="CalendarInactive.png", background_down="",
                 text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]", markup=True, halign="left",
-                valign="top", size_hint=(None, None))
+                valign="top", size_hint=(None, None), on_press=lambda inst: print("test"))
             # Limit the button size to the size of the text
             btn.size = btn.texture_size
             btn.bind(texture_size=lambda inst, size: setattr(inst, "size", size))
 
-            dayLayout = StackLayout(on_press=print)
+            dayLayout = StackLayout()
             dayLayout.add_widget(btn)
             dayLayout.background_color = Color(rgba=btn.background_color)
             btn.bind(background_color=lambda inst, color: setattr(inst.parent.background_color, "rgba", color))
@@ -129,7 +126,7 @@ class Calendar30Days(Widget):
             self.Layout.add_widget(dayLayout)
 
         # Add filler days at the end of the month if necessary
-        for i in range(0, self.rows * self.cols - self.MonthLength - self.MonthStart - 7):
+        for i in range(0, self.Layout.rows * self.Layout.cols - self.MonthLength - self.MonthStart - 7):
             # Subtract 7 to remove dayNames
             self.Layout.add_widget(
                 AsyncImageButton(source=_getImageSource(self, None), allow_stretch=True,

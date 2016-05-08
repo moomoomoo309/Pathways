@@ -1,17 +1,14 @@
-from calendar import monthrange, calendar
+from calendar import calendar
 from datetime import date, datetime
-from os.path import isfile
-from random import randint
 
 from kivy.animation import Animation, AnimationTransition
 from kivy.app import App
 from kivy.clock import Clock
-from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, BooleanProperty, DictProperty, partial
+from kivy.properties import AliasProperty, BoundedNumericProperty, partial
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
@@ -22,7 +19,7 @@ from kivy.uix.widget import Widget
 import Globals
 from Calendar import Calendar30Days
 from ColorUtils import shouldUseWhiteText
-from DatePicker import DatePickerWidget, getMonthLength, getStartDay
+from DatePicker import DatePicker
 
 # Name of each month
 
@@ -102,7 +99,7 @@ class TabView(Widget):
         Globals.redraw.append((self, redraw))
 
     # Redraw the whole thing on resize
-    def resize(self):
+    def resize(self,*args):
         self.topBarBackground.clear()
         self._drawTopBarBackground()
         for i in self.children:  # Reset the size of the all the widgets that make up the top bar
@@ -116,12 +113,7 @@ class TabView(Widget):
                 i.pos = (-1, self.size[1] - self.topBarSize)
                 i.size = (self.size[0], self.topBarSize)
             elif hasattr(self, "datePicker") and i == self.datePicker:
-                rows = 6 if getStartDay(i.children[0].date.month, i.children[0].date.year) % 7 + getMonthLength(
-                    i.children[0].date.month, i.children[0].date.year) < 35 else 7
-                i.size = (min(Window.width, Window.height), self.topBarSize * (rows + 1))
-                i.pos = (
-                    Window.width / 2 - min(Window.width, Window.height) / 2,
-                    Window.height - self.topBarSize * (rows + 1))
+                i.size = (Window.width, Window.height*i.size_hint_y)
             elif isinstance(i, Button):
                 i.pos = (self._getTabButtonPos(i.i))
                 i.size = (self._getTabButtonSize())
@@ -239,22 +231,6 @@ def redraw(self):
     self.topBarBackgroundColor.children[0].rgb = self.tabBarColor()
     self.FloatBar.overlay.children[0].rgb = self.floatBarColor()
     self.FloatBar.overlay.children[0].a = .5
-    if hasattr(self, "datePicker"):
-        self.datePicker.SelectedColor = self.tabBarColor()
-        for i in self.datePicker.header.children:
-            i.background_color = self.tabBarColor()
-        if self.datePicker.children[0].selectedButton is not None:
-            self.datePicker.children[0].selectedButton.background_color = self.tabBarColor()
-            self.datePicker.children[0].selectedButton.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
-            else "[color=000000") + self.datePicker.children[0].selectedButton.text[13:]
-        self.datePicker.children[0].PreviousMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
-        else "[color=000000") + self.datePicker.children[0].PreviousMonth.text[13:]
-
-        self.datePicker.children[0].CurrentMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
-        else "[color=000000") + self.datePicker.children[0].CurrentMonth.text[13:]
-
-        self.datePicker.children[0].NextMonth.text = ("[color=ffffff" if shouldUseWhiteText(self.tabBarColor())
-        else "[color=000000") + self.datePicker.children[0].NextMonth.text[13:]
     for i in self.children:
         if isinstance(i, Button) and i != self.MonthButton and i.text[0:7] == "[color=":
             i.text = ("[color=000000]" if not shouldUseWhiteText(self.tabBarColor()) else "[color=ffffff]") + i.text[
@@ -266,13 +242,10 @@ def showDate(self):  # Pops up the datePicker, adding the widget when it's neede
     # Make sure to remove the old datePicker if it exists
     if hasattr(parent, "datePicker"):
         parent.remove_widget(parent.datePicker)
-    rows = 6 if getStartDay(date.today().month, date.today().year) % 7 + getMonthLength(date.today().month,
-        date.today().year) < 35 else 7
 
     # The actual datePicker widget
-    parent.datePicker = DatePickerWidget(size=(min(Window.width, Window.height), parent.topBarSize * (rows + 1)),
-        date=parent.date,
-        pos=(Window.width / 2 - min(Window.width, Window.height) / 2, Window.height - parent.topBarSize * (rows + 1)))
+    parent.datePicker = DatePicker(size=(Window.width, Window.height*.85),date=parent.date,
+        topBarSize=parent.topBarSize, size_hint_y=.85)
 
     # Changes the date when the date is picked
     parent.datePicker.dismiss = parent.changeDate
@@ -403,17 +376,6 @@ class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate 
         self.parent._animateFloatBar(self.parent.currentTab, dur)
 
 
-def genericResize(*args, **kwargs):  # Generic method to resize any object(s) with given function(s)
-    if isinstance(kwargs["objs"], (list, tuple)):
-        for i in kwargs["objs"]:
-            if isinstance(kwargs["fct"], (list, tuple)):
-                i.size = kwargs["fct"][kwargs["objs"].index(i)]()
-            else:
-                i.size = kwargs["fct"]()
-    else:
-        kwargs["objs"].size = kwargs["fct"]()
-
-
 def makeCalWidget(self):  # Initializes the Calendar grid
     return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
         MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
@@ -427,8 +389,8 @@ def hideGradient(self):
     while screen.parent is not None and not isinstance(screen, Screen):
         screen = screen.parent
     screen.gradient = False
-    gradient=screen.canvas.after.children[len(screen.canvas.after.children) - 1]
-    gradient.pos = (-gradient.size[0],-gradient.size[1])
+    gradient = screen.canvas.after.children[len(screen.canvas.after.children) - 1]
+    gradient.pos = (-gradient.size[0], -gradient.size[1])
 
 
 def showGradient(self):
@@ -450,7 +412,7 @@ def showGradient(self):
 class tabview(App):
     def build(self):
         app = TabView(size=(Window.width, Window.height))
-        Window.bind(on_resize=partial(genericResize, objs=app, fct=lambda: Window.size))
+        Window.bind(size=lambda inst,size: setattr(app,"size",size))
         app.add_screen(makeCalWidget(app))
         return app
 

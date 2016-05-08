@@ -1,17 +1,13 @@
 from __future__ import print_function
 
 import collections
-from datetime import datetime
 
-from kivy.lang import Builder
-from kivy.uix.button import Button
-from kivy.uix.popup import Popup
-from kivy.uix.boxlayout import BoxLayout
-from kivy.properties import StringProperty, BooleanProperty, NumericProperty, ListProperty, ObjectProperty
-from kivy.uix.widget import Widget
-from kivy.uix.modalview import ModalView
-from tzlocal import get_localzone
 from kivy.clock import Clock
+from kivy.lang import Builder
+from kivy.properties import StringProperty, BooleanProperty, NumericProperty, ListProperty
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.modalview import ModalView
+from kivy.uix.widget import Widget
 
 import Globals
 from Event import Event

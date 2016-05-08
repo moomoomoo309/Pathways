@@ -12,7 +12,7 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen, ScreenManager, NoTransition
 from kivy.uix.settings import Settings, SettingItem
 from kivy.uix.slider import Slider
-import pytz # Don't forget to include this module!
+import pytz  # Don't forget to include this module!
 
 from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
 
@@ -20,7 +20,7 @@ import Globals
 from Calendar import Calendar30Days, CalendarLessThan30Days
 from ColorUtils import shouldUseWhiteText, PrimaryColors, Gradient
 from ScheduleView import ScheduleView
-from tabview import TabView, genericResize
+from tabview import TabView
 
 
 def makeCalWidget(self):  # Initializes the Calendar grid
@@ -109,14 +109,14 @@ class main(App):
 
         # Write defaults to the config if it is missing any fields
         def randomImagesCallback(section, key, val):
-            Globals.randomImages=int(val)==1
+            Globals.randomImages = int(val) == 1
             for i in Globals.randomImagesCallback:
-                i(int(val)==1)
+                i(int(val) == 1)
 
         def onlineCallback(section, key, val):
-            Globals.online=int(val)==1
+            Globals.online = int(val) == 1
             for i in Globals.onlineCallback:
-                i(int(val)==1)
+                i(int(val) == 1)
 
         config.read(self.get_application_config())
         config.adddefaultsection("Real Settings")
@@ -131,8 +131,8 @@ class main(App):
         self.settings.add_json_panel("Settings", config, "ExampleSettings.json")
 
     def build(self):
-        Globals.randomImages=Globals.config.getboolean("Real Settings","randomImages")
-        Globals.online=Globals.config.getboolean("Real Settings", "online")
+        Globals.randomImages = Globals.config.getboolean("Real Settings", "randomImages")
+        Globals.online = Globals.config.getboolean("Real Settings", "online")
         topBarSize = 75
         # Put the calendar on the Month view
         app = TabView(size=(Window.width, Window.height), randomImages=True, online=False, topBarSize=topBarSize)
@@ -163,17 +163,21 @@ class main(App):
             app.tabSize * (1 - app.floatBarRatio))))
         settingsScreen = Screen(name="Settings")
 
+        def resizeChildren(obj,size):
+            for i in obj.children:
+                i.size=size
+
         # Resize the settings menu on window resize
-        settingsScreen.bind(size=partial(genericResize, objs=settingsScreen.children, fct=lambda: Window.size))
+        settingsScreen.bind(size=lambda inst, size: resizeChildren(settingsScreen,size))
 
         # Don't have a transition when switching to the settings menu
         screenManager = ScreenManager(transition=NoTransition(), size=Window.size)
 
         # Resize all widgets on window resize
-        Window.bind(on_resize=partial(genericResize, objs=screenManager, fct=lambda: Window.size))
+        Window.bind(size=lambda inst, size: setattr(screenManager, "size", size))
 
         # Propogate resize to all children
-        screenManager.bind(size=partial(genericResize, objs=screenManager.children, fct=lambda: Window.size))
+        screenManager.bind(size=lambda inst, size: resizeChildren(screenManager,size))
 
         # Add screens into screen manager
         screenManager.add_widget(self.appScreen)
@@ -183,7 +187,7 @@ class main(App):
         self.appScreen.add_widget(app)
 
         # Propogate resize to all children
-        self.appScreen.bind(size=partial(genericResize, objs=app, fct=lambda: Window.size))
+        app.bind(size=lambda inst, size: setattr(self.appScreen, "size", size))
 
         # Button to go to the settings screen, changes color depending on what's behind it
         settingsButton = Button(pos=(Window.width - topBarSize, Window.height - topBarSize),
@@ -196,7 +200,7 @@ class main(App):
             mipmap=True)
 
         # Move the settings button so it always stays in the top right corner
-        Window.bind(on_resize=lambda self, _, __: setattr(settingsButton, "pos",
+        Window.bind(size=lambda self, _: setattr(settingsButton, "pos",
             (Window.width - topBarSize, Window.height - topBarSize)))
 
         # Add the button to switch to the settings screen within the app
