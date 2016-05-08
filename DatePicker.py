@@ -80,7 +80,7 @@ class DatePicker(BoxLayout):
         # The previous month button
         self.header.add_widget(Button(on_press=self.lastMonth, background_normal="CalendarInactive.png", font_size=36,
             background_down="CalendarInactive.png", background_color=self.selectedColor(), size_hint_x=None, width=185,
-            text="<", color=(1, 1, 1, 1) if shouldUseWhiteText(self.selectedColor()) else (0, 0, 0, 1)))
+            text="<", color=(1, 1, 1, 1) if shouldUseWhiteText(self.selectedColor()) else (0, 0, 0, 1), halign="left"))
 
         # The current month and year
         self.header.add_widget(Button(background_normal="CalendarInactive.png",
