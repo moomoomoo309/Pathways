@@ -32,9 +32,10 @@
         Label:
             halign: "center"
             valign: "middle"
-            size_hint_y: .65
+            size_hint_y: 1.25
             width: gui.width
-            text: "Create an event"
+            text: "New Event"
+            text_size: self.size
 
         Divider:
             id: div0
@@ -48,15 +49,15 @@
 
         Picker:
             id: startDialog
-            text: "Start time"
+            text: "Start:"
 
         Divider:
             id: div2
 
         Picker:
             id: endDialog
-            text: "End time"
-            minute_offset: 15
+            text: "End:"
+            minute_offset: 30
 
         Divider:
             id: div3
@@ -80,8 +81,10 @@
 
         Button:
             id: submit
-            text: "Submit"
+            text: "Create Event"
             on_press: gui.submit()
+            size_hint_y: 1.25
+
 
 <InputLine@BoxLayout>:
     orientation: "horizontal"
@@ -95,7 +98,6 @@
 
     TextInput:
         id: textinput
-
 
 <Picker@BoxLayout>:
     orientation: "horizontal"
@@ -121,8 +123,8 @@
     DayCyclicRoulette:
         id: daypicker
         background_color: .1568,.1568,.1568,1
-        selected_value: date.today().day
         cycle: calendar.monthrange(yearpicker.selected_value, int(abs(monthpicker.selected_value)%len(monthpicker.values))+1)[1]
+        selected_value: date.today().day
         density: 5
         size_hint_x: .2
 
@@ -145,50 +147,48 @@
     size_hint_y: None
     thickness: 1
     margin: 1
-    height: self.thickness + 2 * self.margin
+    height: self.thickness + 5* self.margin
     color: 0.1843137254902,0.65490196078431,0.83137254901961
     canvas:
         Color:
             rgb: self.color
         Rectangle:
-            pos: self.x + self.margin, self.y + self.margin + 1
-            size: self.width - 2 * self.margin , self.thickness
+            pos: self.x + 5* self.margin, self.y + self.margin + 1
+            size: self.width - 12* self.margin , self.thickness
 
 <repeatPrompt@BoxLayout>:
     id: repeatDialog
     orientation: "horizontal"
+    size_hint_x: .9
     size_hint_y: 2
-    output: str(every.selected_value)+" "+str(int(abs(unitpicker.selected_value))%max(len(unitpicker.values),1))
+    output: str(every.selected_value)+" "+str(int(abs(unitPicker.selected_value))%max(len(unitPicker.values),1))
 
     CheckBox:
         id: checkbox
         size_hint_x: None
-        width: 20
+        width: 50
         on_active: repeatDialog.on_active(self.active)
 
-    Button:
-        text: "Repeat every..."
+    Label:
+        text: "Repeat?"
         id: label
-        background_normal: ""
-        background_down: ""
         background_color: .1568,.1568,.1568,1
-        on_press: checkbox._toggle_active()
         size: self.texture_size
-        size_hint_x: .175
+        size_hint_x: .05
 
     CyclicRoulette:
         id: every
         background_color: .1568,.1568,.1568,1
-        cycle: 100
+        cycle: 30
         selected_value: 1
-        density: 2.5
-        size_hint_x: .5
+        density: 3
+        size_hint_x: .25
 
     TimeCyclicRoulette:
         background_color: .1568,.1568,.1568,1
-        id: unitpicker
+        id: unitPicker
         int_valued: True
         selected_value: 5
         cycle: len(self.values)
-        density: 2.5
-        size_hint_x: .5
+        density: 3
+        size_hint_x: .25
