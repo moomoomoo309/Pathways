@@ -1,0 +1,19 @@
+#:import Popup kivy.uix.popup.Popup
+#:import ScrollView kivy.uix.scrollview.ScrollView
+#:import StackLayout kivy.uix.stacklayout.StackLayout
+
+<EventListGUI@Popup>:
+    id: popup
+    height: len(self.children)*popup.height
+    size_hint: None
+
+    ScrollView:
+        id: scrollview
+        size_hint_x: 1
+        size_hint_y: None
+        height: popup.height
+
+        StackLayout:
+            id: layout
+            height: scrollview.height
+            size_hint_y: None

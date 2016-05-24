@@ -106,7 +106,7 @@ class DatePicker(BoxLayout):
         Globals.redraw.append((None, updateBodyColor))
 
         # The layout containing all of the days
-        self.body = GridLayout(cols=7)
+        self.body = GridLayout(cols=7, pos_hint={"center_x": .5}, size_hint_x=.75)
 
         # Fills in the days
         self.populate_body()

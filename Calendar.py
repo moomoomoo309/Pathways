@@ -19,11 +19,13 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.widget import Widget
+from kivy.uix.popup import Popup
+from kivy.lang import Builder
 
 import Globals
 from AsyncImageButton import AsyncImageButton
 from ColorUtils import shouldUseWhiteText
-from Event import Event
+from Event import Event, EventGUI
 from eventCreationGUI import eventCreationGUI
 
 
@@ -42,10 +44,12 @@ class Calendar30Days(Widget):
     MonthStart = BoundedNumericProperty(0, min=0, max=6)
     # The date selected
     selectedDate = ObjectProperty(date.today())
+
     # Replace these with pictures of your choice.
 
     def __init__(self, **kwargs):
         super(Calendar30Days, self).__init__(**kwargs)  # I need this line for reasons.
+        Globals.eventCallbacks.append(lambda *args: self.populate_body())
         self.originalImages = deepcopy(Globals.images)
         self.bind(selectedDate=lambda self, date: self.changeDate(date))
         self.bind(size=self._resize)
@@ -59,9 +63,10 @@ class Calendar30Days(Widget):
 
         # Populate the body and add the layout to the widget
         self.populate_body()
-        btn=Button(size=self.size,on_press=lambda inst: print("hi"), background_normal="", background_down="",
-            background_color=(0,0,0,0))
-        self.bind(size=lambda inst,size: setattr(btn,"size",size))
+        btn = Button(size=self.size, on_press=lambda inst: eventCreationGUI().open(), background_normal="",
+            background_down="",
+            background_color=(0, 0, 0, 0))
+        self.bind(size=lambda inst, size: setattr(btn, "size", size))
         self.add_widget(btn)
         self.add_widget(self.Layout)
 
@@ -71,6 +76,7 @@ class Calendar30Days(Widget):
         Globals.randomImagesCallback.append(lambda val: self.populate_body())
 
     def populate_body(self):
+        current_date=self.selectedDate.replace(day=1)
         _updateOnline(self, Globals.online)
         self.Layout.clear_widgets()
         # The grid is 7x7 because 7x6 isn't enough for months which start on Saturday
@@ -86,7 +92,7 @@ class Calendar30Days(Widget):
                 background_down="CalendarActive.png", height=75, size_hint_y=None,
                 # Used the first letter of each dayName
                 text="[color=000000][size=36]" + dayNames[i][0:3] + "[/color][/size]",
-                markup=True, halign="center", valign="middle", on_press=self.openEventGUI)
+                markup=True, halign="center", valign="middle", on_press=lambda inst: eventCreationGUI().open())
             btn.bind(size=lambda btn, newVal: setattr(btn, "text_size", newVal))
             # Keep the text_size correct so the text lines up correctly on resize
             self.Layout.add_widget(btn)
@@ -95,35 +101,57 @@ class Calendar30Days(Widget):
                 AsyncImageButton(source=_getImageSource(self, None), allow_stretch=True,
                     keep_ratio=False, anim_delay=1. / 7.5,
                     on_press=lambda inst: setattr(inst, "source", _getImageSource(self, inst.source))))
+
         # If the month doesn't start on a Monday, you need empty days.
+
+        def openDayGUI(widgetRef):
+            if widgetRef() is not None and len(widgetRef().children) > 1:
+                DayGUI(widgetRef).open()
 
         # Add all of the days
         for i in range(0, self.MonthLength):
             btn = Button(texture=None, background_normal="CalendarInactive.png", background_down="",
                 text="[color=000000][size=36]" + str(i + 1) + "[/color][/size]", markup=True, halign="left",
-                valign="top", size_hint=(None, None), on_press=lambda inst: print("test"))
+                valign="top", size_hint=(None, None), on_press=lambda inst: openDayGUI(lambda: inst.parent))
             # Limit the button size to the size of the text
             btn.size = btn.texture_size
             btn.bind(texture_size=lambda inst, size: setattr(inst, "size", size))
 
-            dayLayout = StackLayout()
+            dayLayout = StackLayout(spacing=(5,2))
             dayLayout.add_widget(btn)
             dayLayout.background_color = Color(rgba=btn.background_color)
-            btn.bind(background_color=lambda inst, color: setattr(inst.parent.background_color, "rgba", color))
+            dayLayout.background_color.rgba[3]=1 if btn.background_color[0]==btn.background_color[1]==btn.background_color[2]==1 else .5
+            print(dayLayout.background_color.rgba)
+            btn.bind(background_color=lambda inst, color: setattr(inst.parent.background_color, "rgba", color[0:3]+[(1 if color[0:3]==(1,1,1) else .5)]))
             dayLayout.background = Rectangle(size=dayLayout.size, pos=dayLayout.pos)
             dayLayout.bind(size=lambda inst, size: setattr(inst.background, "size", size))
             dayLayout.bind(pos=lambda inst, pos: setattr(inst.background, "pos", pos))
             dayLayout.canvas.before.add(dayLayout.background_color)
             dayLayout.canvas.before.add(dayLayout.background)
+
+            def addDayEvent(event):
+                event.fullSize=False
+                event.size = [i + 5 for i in event.texture_size]
+                event.bind(texture_size=lambda inst, texture_size: setattr(inst, "size", [i + 5 for i in texture_size]))
+                dayLayout.add_widget(event)
+
+            if current_date in Globals.eventList:
+                for event in Globals.eventList[current_date]:
+                    copiedEvent=event.copy(fullSize=False, autoSize=False)
+                    copiedEvent.size_hint=(None,None)
+                    addDayEvent(copiedEvent)
+            exampleEvent = Event(name="?", size_hint_x=None, size_hint_y=None, color=(0, 0, 0, 1), background_color=Globals.PrimaryColor[0:3]+[.5])
+            addDayEvent(exampleEvent)
             if self.startDate + timedelta(days=i) == self.selectedDate:
-                btn.text = "[color=" + ("FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor) else "000000") + btn.text[
+                btn.text = "[color=" + ("FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor[0:3]+[.5]) else "000000") + btn.text[
                 13:]
-                btn.background_color = Globals.PrimaryColor
-                Globals.redraw.append((btn, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
+                btn.background_color = Globals.PrimaryColor[0:3]+[0]
+                Globals.redraw.append((btn, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor[0:3]+[0])))
                 Globals.redraw.append((btn, lambda inst: setattr(inst, "text", "[color=" + (
-                    "FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor) else "000000") + inst.text[13:])))
+                    "FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor[0:3]+[.5]) else "000000") + inst.text[13:])))
             # Keep text lined up on resize
             self.Layout.add_widget(dayLayout)
+            current_date += timedelta(days=1)
 
         # Add filler days at the end of the month if necessary
         for i in range(0, self.Layout.rows * self.Layout.cols - self.MonthLength - self.MonthStart - 7):
@@ -145,8 +173,6 @@ class Calendar30Days(Widget):
             self.MonthStart = (self.startDate.weekday() + 1) % 7
             self.populate_body()
 
-    def openEventGUI(self, day):  # Not yet implemented
-        pass
 
 
 def _updateOnline(self, *args):
@@ -180,7 +206,8 @@ def _getImageSource(self, blockedImage):  # Changes the images on the empty days
             iterations = 0
             while img == blockedImage or (not isfile(img) and not (Globals.online and "://" in img)):
                 iterations += 1
-                img = Globals.images[self.startDate.month - 1][randint(0, len(Globals.images[self.startDate.month - 1]) - 1)]
+                img = Globals.images[self.startDate.month - 1][
+                    randint(0, len(Globals.images[self.startDate.month - 1]) - 1)]
                 if iterations > 100:
                     return "CalendarInactive.png"
                 elif isfile(img) or (Globals.online and "://" in img):
@@ -188,6 +215,15 @@ def _getImageSource(self, blockedImage):  # Changes the images on the empty days
     if img is not None and (isfile(img) or (Globals.online and "://" in img)):
         return img
     return "CalendarInactive.png"
+
+
+class DayGUI(Popup):
+    def __init__(self, *args, **kwargs):
+        super(DayGUI, self).__init__(**kwargs)
+        self.title=""
+        for i in args[0]().children:
+            if isinstance(i, Event):
+                self.children[0].children[0].add_widget(EventGUI(lambda: i, size_hint=(.85, 1), dismiss=self.dismiss))
 
 
 class CalendarLessThan30Days(Widget):
@@ -225,9 +261,11 @@ class CalendarLessThan30Days(Widget):
         self.backgroundImage = AsyncImage(size=self.innerLayout.size, pos=self.innerLayout.pos,
             source=_getImageSource(self, None), allow_stretch=True, keep_ratio=False, anim_delay=1. / 7.5)
         self.backgroundImage.visible = self.backgroundImage.source != "CalendarInactive.png"
-        def showHide(inst,pos):
-            inst.pos=pos if inst.visible else (-100000, -100000)
-            inst.source=_getImageSource(self,inst.source) if not inst.visible else self.backgroundImage.source
+
+        def showHide(inst, pos):
+            inst.pos = pos if inst.visible else (-100000, -100000)
+            inst.source = _getImageSource(self, inst.source) if not inst.visible else self.backgroundImage.source
+
         self.backgroundImage.showHide = showHide
         self.backgroundImage.overlay = InstructionGroup()
         self.backgroundImage.canvas.add(self.backgroundImage.overlay)
@@ -368,7 +406,7 @@ class CalendarLessThan30Days(Widget):
 
             # Test Widget
             event = Event(size_hint_y=float(self.eventHeight) / self.bodyLayout.height, x=1,
-                pos_hint={"center_y": timeToPos(datetime.now())},
+                pos_hint={"center_y": timeToPos(datetime.now())}, autoSize=False,
                 name="TestButton" + str(i), background_normal="CalendarInactive.png",
                 background_down="CalendarInactive.png", fullSize=True, description="test test test test test test test",
                 color=(1, 1, 1, 1) if shouldUseWhiteText(Globals.PrimaryColor) else (0, 0, 0, 1))
@@ -394,3 +432,6 @@ class CalendarLessThan30Days(Widget):
 
     def openEventGUI(self, *args):  # Not yet implemented
         eventCreationGUI().open()
+
+
+Builder.load_file("./Calendar.kv")

@@ -99,7 +99,7 @@ class TabView(Widget):
         Globals.redraw.append((self, redraw))
 
     # Redraw the whole thing on resize
-    def resize(self,*args):
+    def resize(self, *args):
         self.topBarBackground.clear()
         self._drawTopBarBackground()
         for i in self.children:  # Reset the size of the all the widgets that make up the top bar
@@ -113,7 +113,7 @@ class TabView(Widget):
                 i.pos = (-1, self.size[1] - self.topBarSize)
                 i.size = (self.size[0], self.topBarSize)
             elif hasattr(self, "datePicker") and i == self.datePicker:
-                i.size = (Window.width, Window.height*i.size_hint_y)
+                i.size = (Window.width, Window.height * i.size_hint_y)
             elif isinstance(i, Button):
                 i.pos = (self._getTabButtonPos(i.i))
                 i.size = (self._getTabButtonSize())
@@ -244,7 +244,7 @@ def showDate(self):  # Pops up the datePicker, adding the widget when it's neede
         parent.remove_widget(parent.datePicker)
 
     # The actual datePicker widget
-    parent.datePicker = DatePicker(size=(Window.width, Window.height*.85),date=parent.date,
+    parent.datePicker = DatePicker(size=(Window.width, Window.height * .85), date=parent.date,
         topBarSize=parent.topBarSize, size_hint_y=.85)
 
     # Changes the date when the date is picked
@@ -412,7 +412,7 @@ def showGradient(self):
 class tabview(App):
     def build(self):
         app = TabView(size=(Window.width, Window.height))
-        Window.bind(size=lambda inst,size: setattr(app,"size",size))
+        Window.bind(size=lambda inst, size: setattr(app, "size", size))
         app.add_screen(makeCalWidget(app))
         return app
 

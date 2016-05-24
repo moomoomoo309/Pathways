@@ -25,6 +25,8 @@ PrimaryColors = (
 
 # From http://stackoverflow.com/questions/3942878/
 def shouldUseWhiteText(color):
+    if len(color)<3:
+        return False
     fct = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
     return 0.2126 * fct(color[0]) + 0.7152 * fct(color[1]) + 0.0722 * fct(color[2]) < 0.179
 

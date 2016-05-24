@@ -1,3 +1,5 @@
+from datetime import date
+
 PrimaryColor = []
 redraw = []
 randomImagesCallback = []
@@ -6,7 +8,16 @@ config = None
 tabview = None
 online = False
 randomImages = False
-eventCreationListener = None
+eventCallbacks=[]
+def eventCreationListener(event):
+    eventDate=date(event.start.year,event.start.month,event.start.day)
+    if not eventDate in eventList:
+        eventList[eventDate]=[]
+    eventList[eventDate].append(event)
+    eventList[eventDate].sort(lambda a,b: a.start<b.start)
+    for i in eventCallbacks:
+        i(eventList,event)
+eventList = {}
 images = {
     4: ["https://www.colourbox.com/preview/5665824-a-school-building.jpg",
         "http://cache-blog.credit.com/wp-content/uploads/2013/04/student-loans-ts-1360x860.jpg",

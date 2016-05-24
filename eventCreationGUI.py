@@ -7,6 +7,7 @@ from kivy.lang import Builder
 from kivy.properties import StringProperty, BooleanProperty, NumericProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.modalview import ModalView
+from kivy.uix.popup import Popup
 from kivy.uix.widget import Widget
 
 import Globals
@@ -14,15 +15,16 @@ from Event import Event
 from roulette import CyclicSlot, CyclicRoulette
 
 
-class eventCreationGUI(ModalView):
+class eventCreationGUI(Popup):
     allDay = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super(eventCreationGUI, self).__init__(**kwargs)
-#        for i in self.children:
-#            for j in i.children:
-#                for k in range(len(j.children) / 2):
-#                    j.remove_widget(j.children[0])
+
+    #        for i in self.children:
+    #            for j in i.children:
+    #                for k in range(len(j.children) / 2):
+    #                    j.remove_widget(j.children[0])
 
     def on_dismiss(self):
         for i in ["start", "startTimezone", "end", "endTimezone", "name", "description", "location", "repeat",
@@ -33,7 +35,8 @@ class eventCreationGUI(ModalView):
         if self.submitted:
             if isinstance(Globals.eventCreationListener, collections.Callable):
                 Globals.eventCreationListener(Event(start=self.start if self.start != "" else "Unnamed Event",
-                    startTimezone=self.startTimezone, end=self.end, endTimezone=self.endTimezone, name=self.name,
+                    startTimezone=self.startTimezone, end=self.end, endTimezone=self.endTimezone,
+                    name=self.name if len(self.name) > 0 else "Unnamed Event",
                     description=self.description if self.description != "" else "No description",
                     location=self.location, repeat=self.repeat, reminders="", allDay=self.allDay))
 

@@ -13,6 +13,8 @@ from oauth2client import tools
 
 import datetime
 
+from Event import Event
+
 try:
     import argparse
     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -61,7 +63,7 @@ def main():
     10 events on the user's calendar.
     """
     credentials = get_credentials()
-    http = credentials.authorize(httplib2.Http())
+    http = credentials.authorize(httplib2.Http(disable_ssl_certificate_validation=True))
     service = discovery.build('calendar', 'v3', http=http)
 
     now = datetime.datetime.utcfromtimestamp(0).isoformat() + 'Z' # 'Z' indicates UTC time
@@ -78,6 +80,8 @@ def main():
     for event in events:
         start = event['start'].get('dateTime', event['start'].get('date'))
         print(start, event['summary'])
+        print(event)
+        print(Event.fromDict(event))
 
 
 if __name__ == '__main__':

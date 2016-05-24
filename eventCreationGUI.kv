@@ -10,35 +10,25 @@
 #:import get_localzone tzlocal.get_localzone
 #:import Button kivy.uix.button.Button
 
-<eventCreationGUI@Modalview>:
+<eventCreationGUI@Popup>:
     start: startDialog.date
     startTimezone: get_localzone().zone
     end: endDialog.date
     endTimezone: get_localzone().zone
-    description: descriptionDialog.text
-    name: nameDialog.text
-    location: locationDialog.text
-    repeat: repeatDialog.output if repeatDialog.output is not None else ""
+    description: descriptionDialog.output
+    name: nameDialog.output
+    location: locationDialog.output
+    repeat: repeatDialog.output if repeatDialog.output is not None and repeatDialog.ids["checkbox"].active else ""
     submitted: False
     size_hint_y: .9
     size_hint_x: .95
+    title: "Create an event"
     on_open: setattr(self,"submitted", False)
     id: gui
 
     BoxLayout:
         orientation: "vertical"
         id: outerLayout
-
-        Label:
-            halign: "center"
-            valign: "middle"
-            size_hint_y: .65
-            width: gui.width
-            text: "Create an event"
-
-        Divider:
-            id: div0
-
         InputLine:
             id: nameDialog
             text: "Name"
