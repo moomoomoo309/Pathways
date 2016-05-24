@@ -121,7 +121,6 @@ class Calendar30Days(Widget):
             dayLayout.add_widget(btn)
             dayLayout.background_color = Color(rgba=btn.background_color)
             dayLayout.background_color.rgba[3]=1 if btn.background_color[0]==btn.background_color[1]==btn.background_color[2]==1 else .5
-            print(dayLayout.background_color.rgba)
             btn.bind(background_color=lambda inst, color: setattr(inst.parent.background_color, "rgba", color[0:3]+[(1 if color[0:3]==(1,1,1) else .5)]))
             dayLayout.background = Rectangle(size=dayLayout.size, pos=dayLayout.pos)
             dayLayout.bind(size=lambda inst, size: setattr(inst.background, "size", size))

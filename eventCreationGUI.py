@@ -6,7 +6,6 @@ from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.properties import StringProperty, BooleanProperty, NumericProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.modalview import ModalView
 from kivy.uix.popup import Popup
 from kivy.uix.widget import Widget
 
@@ -108,7 +107,6 @@ class repeatPrompt(BoxLayout):
         self.filler2 = None
 
     def late_init(self, *args):
-        print("test")
         self.filler1 = Widget(size_hint_x=self.ids["every"].size_hint_x)
         self.ids["every"].bind(size_hint_x=lambda inst, hint: setattr(self.filler1, "size_hint_x", hint))
         self.filler2 = Widget(size_hint_x=self.ids["unitpicker"].size_hint_x)
@@ -129,20 +127,3 @@ class repeatPrompt(BoxLayout):
 
 
 Builder.load_file("./eventCreationGUI.kv")
-
-"""
-    start = ObjectProperty(datetime.now(), baseclass=datetime)
-    startTimezone = StringProperty(str(get_localzone()))
-    end = ObjectProperty(datetime.now() + timedelta(hours=1), baseclass=datetime, allow_none=True)
-    endTimeZone = StringProperty(str(get_localzone()))
-    name = StringProperty("Unnamed Event")
-    description = StringProperty()
-    location = StringProperty()
-    repeat = StringProperty()
-    attendees = StringProperty()
-    defaultReminder = BooleanProperty(False)
-    reminders = ListProperty()
-    fullSize = BooleanProperty(False)
-    backgroundColor = ListProperty()
-    allDay = BooleanProperty(False)
-"""
