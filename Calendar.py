@@ -76,7 +76,7 @@ class Calendar30Days(Widget):
         Globals.randomImagesCallback.append(lambda val: self.populate_body())
 
     def populate_body(self):
-        current_date=self.selectedDate.replace(day=1)
+        current_date = self.selectedDate.replace(day=1)
         _updateOnline(self, Globals.online)
         self.Layout.clear_widgets()
         # The grid is 7x7 because 7x6 isn't enough for months which start on Saturday
@@ -117,11 +117,13 @@ class Calendar30Days(Widget):
             btn.size = btn.texture_size
             btn.bind(texture_size=lambda inst, size: setattr(inst, "size", size))
 
-            dayLayout = StackLayout(spacing=(5,2))
+            dayLayout = StackLayout(spacing=(5, 2))
             dayLayout.add_widget(btn)
             dayLayout.background_color = Color(rgba=btn.background_color)
-            dayLayout.background_color.rgba[3]=1 if btn.background_color[0]==btn.background_color[1]==btn.background_color[2]==1 else .5
-            btn.bind(background_color=lambda inst, color: setattr(inst.parent.background_color, "rgba", color[0:3]+[(1 if color[0:3]==(1,1,1) else .5)]))
+            dayLayout.background_color.rgba[3] = 1 if btn.background_color[0] == btn.background_color[1] == \
+                                                      btn.background_color[2] == 1 else .5
+            btn.bind(background_color=lambda inst, color: setattr(inst.parent.background_color, "rgba",
+                color[0:3] + [(1 if color[0:3] == (1, 1, 1) else .5)]))
             dayLayout.background = Rectangle(size=dayLayout.size, pos=dayLayout.pos)
             dayLayout.bind(size=lambda inst, size: setattr(inst.background, "size", size))
             dayLayout.bind(pos=lambda inst, pos: setattr(inst.background, "pos", pos))
@@ -129,25 +131,28 @@ class Calendar30Days(Widget):
             dayLayout.canvas.before.add(dayLayout.background)
 
             def addDayEvent(event):
-                event.fullSize=False
+                event.fullSize = False
                 event.size = [i + 5 for i in event.texture_size]
                 event.bind(texture_size=lambda inst, texture_size: setattr(inst, "size", [i + 5 for i in texture_size]))
                 dayLayout.add_widget(event)
 
             if current_date in Globals.eventList:
                 for event in Globals.eventList[current_date]:
-                    copiedEvent=event.copy(fullSize=False, autoSize=False)
-                    copiedEvent.size_hint=(None,None)
+                    copiedEvent = event.copy(fullSize=False, autoSize=False)
+                    copiedEvent.size_hint = (None, None)
                     addDayEvent(copiedEvent)
-            exampleEvent = Event(name="?", size_hint_x=None, size_hint_y=None, color=(0, 0, 0, 1), background_color=Globals.PrimaryColor[0:3]+[.5])
+            exampleEvent = Event(name="?", size_hint_x=None, size_hint_y=None, color=(0, 0, 0, 1),
+                background_color=Globals.PrimaryColor[0:3] + [.5])
             addDayEvent(exampleEvent)
             if self.startDate + timedelta(days=i) == self.selectedDate:
-                btn.text = "[color=" + ("FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor[0:3]+[.5]) else "000000") + btn.text[
-                13:]
-                btn.background_color = Globals.PrimaryColor[0:3]+[0]
-                Globals.redraw.append((btn, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor[0:3]+[0])))
+                btn.text = "[color=" + (
+                "FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor[0:3] + [.5]) else "000000") + btn.text[
+                           13:]
+                btn.background_color = Globals.PrimaryColor[0:3] + [0]
+                Globals.redraw.append(
+                    (btn, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor[0:3] + [0])))
                 Globals.redraw.append((btn, lambda inst: setattr(inst, "text", "[color=" + (
-                    "FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor[0:3]+[.5]) else "000000") + inst.text[13:])))
+                    "FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor[0:3] + [.5]) else "000000") + inst.text[13:])))
             # Keep text lined up on resize
             self.Layout.add_widget(dayLayout)
             current_date += timedelta(days=1)
@@ -171,7 +176,6 @@ class Calendar30Days(Widget):
             self.MonthLength = monthrange(date.year, date.month)[1]
             self.MonthStart = (self.startDate.weekday() + 1) % 7
             self.populate_body()
-
 
 
 def _updateOnline(self, *args):
@@ -219,7 +223,7 @@ def _getImageSource(self, blockedImage):  # Changes the images on the empty days
 class DayGUI(Popup):
     def __init__(self, *args, **kwargs):
         super(DayGUI, self).__init__(**kwargs)
-        self.title=""
+        self.title = ""
         for i in args[0]().children:
             if isinstance(i, Event):
                 self.children[0].children[0].add_widget(EventGUI(lambda: i, size_hint=(.85, 1), dismiss=self.dismiss))
@@ -236,6 +240,8 @@ class CalendarLessThan30Days(Widget):
 
     def __init__(self, **kwargs):
         super(CalendarLessThan30Days, self).__init__(**kwargs)
+        Globals.eventCallbacks.append(lambda *args: self.changeDate(self.originalStartDate))
+
         self.startDate = self.originalStartDate
         Globals.onlineCallback.append(lambda val: setattr(self, "online", val))
         Globals.randomImagesCallback.append(lambda val: setattr(self, "randomImages", val))
@@ -348,7 +354,6 @@ class CalendarLessThan30Days(Widget):
             self.startDate -= timedelta(days=self.startDate.isoweekday())
         else:
             self.startDate -= timedelta(days=self.days // 2)
-        WidgetsToAddOnAGivenDay = []  # This is for demo purposes, it will be replaced with a central event storage.
 
         self.dayBarLayout.clear_widgets()
         self.innerBodyLayout.clear_widgets()
@@ -404,20 +409,26 @@ class CalendarLessThan30Days(Widget):
                 return 1 - (1.6 / 24 + float(time.hour - 1. + time.minute / 60) / 24.)
 
             # Test Widget
-            event = Event(size_hint_y=float(self.eventHeight) / self.bodyLayout.height, x=1,
+            testEvent = Event(size_hint_y=float(self.eventHeight) / self.bodyLayout.height, x=1,
                 pos_hint={"center_y": timeToPos(datetime.now())}, autoSize=False,
                 name="TestButton" + str(i), background_normal="CalendarInactive.png",
                 background_down="CalendarInactive.png", fullSize=True, description="test test test test test test test",
                 color=(1, 1, 1, 1) if shouldUseWhiteText(Globals.PrimaryColor) else (0, 0, 0, 1))
-            event.bind(width=lambda inst, width: setattr(inst, "width", inst.parent.width - 1))
-            Globals.redraw.append((event, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
-            Globals.redraw.append((event, lambda inst: setattr(inst, "color", (1, 1, 1, 1) if shouldUseWhiteText(
-                Globals.PrimaryColor) else (0, 0, 0, 1))))
-            self.dayList[i].add_widget(event)
 
-            for event in WidgetsToAddOnAGivenDay:  # Sort them out by date before here
-                event.pos_hint = {"center_y": timeToPos(event.time)}
+            def add_event(event):
+                self.dayList[i].bind(width=lambda inst, width: setattr(event, "width", width - 1))
+                event.size_hint = (None, None)
+                Globals.redraw.append((event, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
+                Globals.redraw.append((event, lambda inst: setattr(inst, "color", (1, 1, 1, 1) if shouldUseWhiteText(
+                    Globals.PrimaryColor) else (0, 0, 0, 1))))
+                event.pos_hint = {"center_y": timeToPos(event.start)}
+                event.size_hint_y=float(self.eventHeight) / self.bodyLayout.height
                 self.dayList[i].add_widget(event)
+
+            add_event(testEvent)
+            if self.startDate + timedelta(days=i) in Globals.eventList:
+                for localEvent in Globals.eventList[self.startDate + timedelta(days=i)]:
+                    add_event(localEvent.copy(fullSize=True, autoSize=False))
 
         if self.days > 1:  # Add the hour bar if it's not one day
             if not self.dayBarLayout in self.outerLayout.children:

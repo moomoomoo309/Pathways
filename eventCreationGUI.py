@@ -20,11 +20,6 @@ class eventCreationGUI(Popup):
     def __init__(self, **kwargs):
         super(eventCreationGUI, self).__init__(**kwargs)
 
-    #        for i in self.children:
-    #            for j in i.children:
-    #                for k in range(len(j.children) / 2):
-    #                    j.remove_widget(j.children[0])
-
     def on_dismiss(self):
         for i in ["start", "startTimezone", "end", "endTimezone", "name", "description", "location", "repeat",
             "allDay"]:
@@ -34,8 +29,7 @@ class eventCreationGUI(Popup):
         if self.submitted:
             if isinstance(Globals.eventCreationListener, collections.Callable):
                 Globals.eventCreationListener(Event(start=self.start if self.start != "" else "Unnamed Event",
-                    startTimezone=self.startTimezone, end=self.end, endTimezone=self.endTimezone,
-                    name=self.name if len(self.name) > 0 else "Unnamed Event",
+                    startTimezone=self.startTimezone, end=self.end, endTimezone=self.endTimezone, name=self.name,
                     description=self.description if self.description != "" else "No description",
                     location=self.location, repeat=self.repeat, reminders="", allDay=self.allDay))
 
@@ -107,6 +101,7 @@ class repeatPrompt(BoxLayout):
         self.filler2 = None
 
     def late_init(self, *args):
+        print("test")
         self.filler1 = Widget(size_hint_x=self.ids["every"].size_hint_x)
         self.ids["every"].bind(size_hint_x=lambda inst, hint: setattr(self.filler1, "size_hint_x", hint))
         self.filler2 = Widget(size_hint_x=self.ids["unitpicker"].size_hint_x)
@@ -124,6 +119,15 @@ class repeatPrompt(BoxLayout):
             self.remove_widget(self.ids["unitpicker"])
             self.add_widget(self.filler1)
             self.add_widget(self.filler2)
+
+def getRepeatText(text):
+    if text=="":
+        return text
+    numbers=text.split(" ")
+    text="Every " + (numbers[0] + " " if numbers[0]!="1" else "") + TimeCyclicRoulette.values[int(numbers[1])][0:-3] + (
+    "" if int(numbers[0]) == 1 else "s")
+    print("Repeat = %s" % text)
+    return text
 
 
 Builder.load_file("./eventCreationGUI.kv")

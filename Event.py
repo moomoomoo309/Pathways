@@ -49,11 +49,12 @@ class Event(BoxLayout, ButtonBehavior):
                 "0" if self.start.minute < 10 else "") + str(self.start.minute) + " " + \
                                    str("PM" if self.start.hour > 12 else "AM") + ": " + self.titleLabel.text
             if len(self.location)>0:
-                self.titleLabel.text+=" @ "+self.location
+                self.titleLabel.text+="@"+self.location
         if self.autoSize:
             self.titleLabel.bind(texture_size=lambda inst, size: setattr(inst, "size", size))
             self.size_hint_y = None
         else:
+            self.size_hint=(None,None)
             self.titleLabel.bind(size=lambda inst, size: setattr(inst, "text_size", size))
         self.titleLabel.bind(background_color=lambda inst, background_color: setattr(inst, "color",
             (1, 1, 1, 1) if shouldUseWhiteText(background_color) else (0, 0, 0, 1)))

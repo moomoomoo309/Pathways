@@ -1,4 +1,5 @@
 #:import Divider eventCreationGUI.Divider
+#:import getRepeatText eventCreationGUI.getRepeatText
 
 <EventGUI@Popup>:
     id: popup
@@ -41,10 +42,10 @@
         DoubleLabel:
             id: repeatLabel
             firstText: "Repeat"
-            secondText: popup.eventReference().repeat
+            secondText: getRepeatText(popup.eventReference().repeat)
 
         Button:
-            size_hint_y: .35
+            size_hint_y: .6
             text: "Close"
             id: dismiss
             on_press: popup.dismiss()
@@ -62,7 +63,7 @@
     Divider:
         size_hint_x: None
         width: 3
-        thickness: first.height
+        thickness: first.height - 5
 
     Label:
         id:second
