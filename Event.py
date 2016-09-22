@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from datetime import datetime, timedelta, date
 
+from dateutil import parser
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import Rectangle
 from kivy.lang import Builder
@@ -11,7 +12,6 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from tzlocal import get_localzone
-from dateutil import parser
 
 import Globals
 from ColorUtils import shouldUseWhiteText
@@ -42,14 +42,14 @@ class Event(BoxLayout, ButtonBehavior):
         self.orientation = "vertical"
         self.on_press = kwargs["on_press"] if "on_press" in kwargs else self.on_press
         self.titleLabel = Button(text=self.name, size_hint_y=(.75 if self.fullSize else 1),
-            on_press=lambda inst: self.on_press(self), halign="left", valign="top", shorten=True,
+            on_press=lambda inst: self.on_press(self), halign="center", valign="top", shorten=True,
             background_normal="", background_down="", background_color=(0,0,0,1))
         if self.fullSize:
-            self.titleLabel.text = " " + str((self.start.hour-1) % 12 + 1) + ":" + (
+            self.titleLabel.text = str((self.start.hour - 1) % 12 + 1) + ":" + (
                 "0" if self.start.minute < 10 else "") + str(self.start.minute) + " " + \
-                                   str("PM" if self.start.hour > 12 else "AM") + ": " + self.titleLabel.text
+                                   str("PM" if self.start.hour > 12 else "AM") + "\n" + self.titleLabel.text
             if len(self.location)>0:
-                self.titleLabel.text+="@"+self.location
+                self.titleLabel.text += " at " + self.location
         if self.autoSize:
             self.titleLabel.bind(texture_size=lambda inst, size: setattr(inst, "size", size))
             self.size_hint_y = None

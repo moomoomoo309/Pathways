@@ -1,9 +1,10 @@
 import calendar
-from datetime import date, datetime
-from functools import partial
+from datetime import date, datetime, timedelta
+
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.graphics import Rectangle
+from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
@@ -12,13 +13,11 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.screenmanager import Screen, ScreenManager, NoTransition
 from kivy.uix.settings import Settings, SettingItem
 from kivy.uix.slider import Slider
-import pytz  # Don't forget to include this module!
-
-from kivy.properties import BoundedNumericProperty, ListProperty, StringProperty
 
 import Globals
 from Calendar import Calendar30Days, CalendarLessThan30Days
 from ColorUtils import shouldUseWhiteText, PrimaryColors, Gradient
+from Event import Event
 from ScheduleView import ScheduleView
 from tabview import TabView
 
@@ -135,7 +134,8 @@ class main(App):
         Globals.online = Globals.config.getboolean("Real Settings", "online")
         topBarSize = 75
         # Put the calendar on the Month view
-        app = TabView(size=(Window.width, Window.height), randomImages=True, online=False, topBarSize=topBarSize)
+        app = TabView(size=(Window.width, Window.height), randomImages=True, online=Globals.online,
+            topBarSize=topBarSize)
         Globals.tabview = app
         app.add_screen(makeCalWidget(app))
         app.add_screen(CalendarLessThan30Days(days=7), 1)
@@ -209,7 +209,16 @@ class main(App):
         # Add the settings menu to the screen so it shows up
         settingsScreen.add_widget(self.settings)
 
+        addTestEvents()
+
         return screenManager
+
+
+def addTestEvents():
+    for i in range(31):
+        Globals.eventCreationListener(Event(name="Testing event!", description="testEvent" + str(i + 1),
+            start=datetime.now() - timedelta(days=datetime.now().day - 1) + timedelta(days=i),
+            end=datetime.now() - timedelta(days=datetime.now().day - 1) + timedelta(days=i) + timedelta(minutes=15)))
 
 
 def updatePrimaryColor(_, color):

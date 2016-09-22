@@ -1,13 +1,13 @@
 [app]
 
 # (str) Title of your application
-title = App-Name_TBA
+title = Pathways
 
 # (str) Package name
-package.name = main
+package.name = Pathways
 
 # (str) Package domain (needed for android/ios packaging)
-package.domain = org.tba
+package.domain = org.pathways
 
 # (str) Source code where the main.py live
 source.dir = .

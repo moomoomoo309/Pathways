@@ -1,4 +1,4 @@
-'''
+"""
 DatetimePicker
 ==============
 
@@ -42,7 +42,7 @@ I didn't focus much on the graphics, or to closely simulate the iOS or android
 experience. You are encourage to contribute to improve the default appearance
 of the datetimepicker!
 
-'''
+"""
 
 from calendar import monthrange
 from datetime import datetime
@@ -95,7 +95,7 @@ Builder.load_string('''
 
 
 class DatetimePicker(BoxLayout):
-    '''a simple roulette datetime selector for *timezone-naive* datetime.'''
+    """a simple roulette datetime selector for *timezone-naive* datetime."""
 
     _shade_width = NumericProperty('1.5dp')
     shield_width = NumericProperty('25dp')
@@ -197,7 +197,7 @@ class DatetimePicker(BoxLayout):
         return
 
     def set_datetime(self, val, *args, **kw):
-        '''animatedly set the roulette's datetime to ``val``.
+        """animatedly set the roulette's datetime to ``val``.
         The keyword argument ``largest_delta`` can be set to True to specify
         that only the largest granularity of time that differs from
         ``val`` to the time shown on the roulettes is to be changed.
@@ -208,7 +208,7 @@ class DatetimePicker(BoxLayout):
         to center on ``5``, and no other changes are introduced.
 
         This option is useful for reducing graphical load when linking
-        this roulette to changing values of time.'''
+        this roulette to changing values of time."""
         largest_delta = kw.get('largest_delta')
         for field in self.datetime_fields:
             changed = getattr(self, field).select_and_center(
@@ -257,7 +257,7 @@ class DatetimePicker(BoxLayout):
 
 
 class DatePicker(DatetimePicker):
-    '''a simple roulette date selector for *timezone-naive* datetime.'''
+    """a simple roulette date selector for *timezone-naive* datetime."""
 
     def add_widgets(self):
         children = [
@@ -273,7 +273,7 @@ class DatePicker(DatetimePicker):
 
 
 class TimePicker(DatetimePicker):
-    '''a simple roulette time selector for *timezone-naive* datetime.'''
+    """a simple roulette time selector for *timezone-naive* datetime."""
 
     def add_widgets(self):
         children = [

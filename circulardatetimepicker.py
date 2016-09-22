@@ -45,11 +45,11 @@ in Kv language:
 ```
 """
 
+import datetime
+from math import atan, pi, radians, sin, cos
+
 from kivy.animation import Animation
 from kivy.clock import Clock
-
-from circularlayout import CircularLayout
-# from kivy.garden.recycleview import RecycleView
 from kivy.graphics import Line, Color, Ellipse
 from kivy.lang import Builder
 from kivy.properties import NumericProperty, BoundedNumericProperty, \
@@ -59,8 +59,7 @@ from kivy.properties import NumericProperty, BoundedNumericProperty, \
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 
-from math import atan, pi, radians, sin, cos
-import datetime
+from circularlayout import CircularLayout
 
 
 def map_number(x, in_min, in_max, out_min, out_max):
@@ -401,9 +400,9 @@ class CircularNumberPicker(CircularLayout):
             angle = 3 * pi / 2
         else:
             angle = atan(ly / lx)
-            if lx < 0 and ly > 0:
+            if lx < 0 < ly:
                 angle += pi
-            if lx > 0 and ly < 0:
+            if lx > 0 > ly:
                 angle += 2 * pi
             if lx < 0 and ly < 0:
                 angle += pi

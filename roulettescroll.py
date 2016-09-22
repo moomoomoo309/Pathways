@@ -1,56 +1,56 @@
-'''
+"""
 RouletteScrollEffect
 ===================
 
-This is a subclass of :class:`kivy.effects.ScrollEffect` that simulates the 
+This is a subclass of :class:`kivy.effects.ScrollEffect` that simulates the
 motion of a roulette, or a notched wheel (think Wheel of Fortune). It is
 primarily designed for emulating the effect of the iOS and android date pickers.
 
 Usage
 -----
 
-Here's an example of using :class:`RouletteScrollEffect` for a 
-:class:`kivy.uix.scrollview.ScrollView`:: 
+Here's an example of using :class:`RouletteScrollEffect` for a
+:class:`kivy.uix.scrollview.ScrollView`::
 
     if __name__ == '__main__':
         # example modified from the scrollview example
-    
+
         from kivy.uix.gridlayout import GridLayout
         from kivy.uix.button import Button
         from kivy.uix.scrollview import ScrollView
-    
+
         # preparing a gridlayout inside a scrollview
         layout = GridLayout(cols=1, padding=10,
                 size_hint=(None, None), width=500)
-    
+
         layout.bind(minimum_height=layout.setter('height'))
-    
+
         for i in range(30):
             btn = Button(text=str(i), size=(480, 40),
                          size_hint=(None, None))
             layout.add_widget(btn)
-    
+
         root = ScrollView(size_hint=(None, None), size=(500, 320),
                 pos_hint={'center_x': .5, 'center_y': .5}
                 , do_scroll_x=False)
         root.add_widget(layout)
-        
+
         # preparation complete. Now add the new scroll effect!
         root.effect_y = RouletteScrollEffect(anchor=20, interval=40)
 
         runTouchApp(root)
-        
+
 Here the :class:`ScrollView` scrolls through a series of buttons with height
-40. We then attached a :class:`RouletteScrollEffect` with interval 40, 
+40. We then attached a :class:`RouletteScrollEffect` with interval 40,
 corresponding to the button heights. This allows the scrolling to stop at
 the same offset no matter where it stops. The :attr:`RouletteScrollEffect.anchor`
-adjusts this offset. 
+adjusts this offset.
 
 Customizations
 --------------
 
-Other settings that can be played with include 
-:attr:`RouletteScrollEffect.pull_duration`, 
+Other settings that can be played with include
+:attr:`RouletteScrollEffect.pull_duration`,
 :attr:`RouletteScrollEffect.coasting_alpha`,
 :attr:`RouletteScrollEffect.pull_back_velocity`, and
 :attr:`RouletteScrollEffect.terminal_velocity`. See their module documentations
@@ -59,13 +59,14 @@ for details.
 :class:`RouletteScrollEffect` has one event ``on_coasted_to_stop`` that
 is fired when the roulette stops, "making a selection". It can be listened to
 for handling or cleaning up choice making.
-'''
+"""
+
+from math import ceil, floor, exp
 
 from kivy.animation import Animation
-from kivy.clock import Clock
 from kivy.effects.scroll import ScrollEffect
 from kivy.properties import NumericProperty, AliasProperty, ObjectProperty
-from math import ceil, floor, exp
+
 
 class RouletteScrollEffect(ScrollEffect):
     __events__ = ('on_coasted_to_stop',)
@@ -191,8 +192,8 @@ class RouletteScrollEffect(ScrollEffect):
             self.trigger_velocity_update()
             
     def on_coasted_to_stop(self, *args):
-        '''this event fires when the roulette has stopped, "making a selection".
-        '''
+        """this event fires when the roulette has stopped, "making a selection".
+        """
         pass
         
     def _coasted_to_stop(self, *args):

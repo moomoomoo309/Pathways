@@ -28,8 +28,8 @@ class eventCreationGUI(Popup):
                 return True
         if self.submitted:
             if isinstance(Globals.eventCreationListener, collections.Callable):
-                Globals.eventCreationListener(Event(start=self.start if self.start != "" else "Unnamed Event",
-                    startTimezone=self.startTimezone, end=self.end, endTimezone=self.endTimezone, name=self.name,
+                Globals.eventCreationListener(Event(name=self.name if self.name != "" else "Unnamed",
+                    startTimezone=self.startTimezone, end=self.end, endTimezone=self.endTimezone, start=self.start,
                     description=self.description if self.description != "" else "No description",
                     location=self.location, repeat=self.repeat, reminders="", allDay=self.allDay))
 
@@ -122,7 +122,7 @@ class repeatPrompt(BoxLayout):
 
 def getRepeatText(text):
     if text=="":
-        return text
+        return "Never"
     numbers=text.split(" ")
     text="Every " + (numbers[0] + " " if numbers[0]!="1" else "") + TimeCyclicRoulette.values[int(numbers[1])][0:-3] + (
     "" if int(numbers[0]) == 1 else "s")

@@ -1,4 +1,4 @@
-'''
+"""
 Roulette
 ========
 
@@ -106,7 +106,7 @@ the default tick classes of respectively :class:`Roulette` and
 :class:`CyclicRoulette`, and :class:`SlotLabeller`, the default labeller class
 of :class:`Roulette`.
 
-'''
+"""
 
 __version__ = '0.1.1'
 
@@ -180,15 +180,15 @@ class Slot(Tick):
         return self.format_str.format(value)
 
     def slot_value(self, index, *args, **kw):
-        '''returns the selection value that corresponds to ``index``.
-        Should be overriden if necessary.'''
+        """returns the selection value that corresponds to ``index``.
+        Should be overriden if necessary."""
         if self.int_valued:
             return int(round(index))
         return index
 
     def index_of(self, val, *args, **kw):
-        '''returns the index that corresponds to a selection value ``val``.
-        Should be override if necessary.'''
+        """returns the index that corresponds to a selection value ``val``.
+        Should be override if necessary."""
         return val
 
     def get_label_texture(self, index, **kw):
@@ -221,8 +221,8 @@ class CyclicSlot(Slot):
         return val
 
     def index_of(self, val, current_index, *args, **kw):
-        '''returns the closest index to ``current_index`` that would correspond
-        to ``val``. All indices should be localized.'''
+        """returns the closest index to ``current_index`` that would correspond
+        to ``val``. All indices should be localized."""
         if self.int_valued:
             val = int(round(val))
         zero_indexed = self.zero_indexed
@@ -372,8 +372,8 @@ class Roulette(Tickline):
             self.tick.format_str = self.format_str
 
     def get_anchor(self):
-        '''returns a legal stopping value for the :class:`RouletteScrollEffect`.
-        Should be overriden if necessary.'''
+        """returns a legal stopping value for the :class:`RouletteScrollEffect`.
+        Should be overriden if necessary."""
         return 0
 
     def _update_effect_constants(self, *args):
@@ -393,12 +393,12 @@ class Roulette(Tickline):
         effect.on_coasted_to_stop = self._trigger_set_selection
 
     def set_selected_value(self, *args):
-        '''set :attr:`selected_value` to the currently slot.'''
+        """set :attr:`selected_value` to the currently slot."""
         self.selected_value = self.round_(self.rolling_value)
 
     def round_(self, val):
-        '''round an arbitrary rolling value to a legal selection value.
-        Should be overriden if necessary.'''
+        """round an arbitrary rolling value to a legal selection value.
+        Should be overriden if necessary."""
         if self.int_valued:
             return int(round(val))
         return round(val)
@@ -409,8 +409,8 @@ class Roulette(Tickline):
         self._trigger_calibrate()
 
     def index_of(self, val):
-        '''returns the index that should be equivalent to a selection value
-        ``val``. Should be overriden if necessary.'''
+        """returns the index that should be equivalent to a selection value
+        ``val``. Should be overriden if necessary."""
         return val
 
     def center_on(self, val, animate=True):
@@ -430,9 +430,9 @@ class Roulette(Tickline):
             self._centered()
 
     def on_centered(self, *args):
-        '''event that fires when the operation :meth:`center_on` completes.
+        """event that fires when the operation :meth:`center_on` completes.
         (and by extension, when :meth:`center` or :meth:`select_and_center`
-        completes). By default it doesn't do anything.'''
+        completes). By default it doesn't do anything."""
         pass
 
     def _centered(self, *args):
@@ -443,9 +443,9 @@ class Roulette(Tickline):
         self.center_on(self.selected_value, animate)
 
     def select_and_center(self, val, *args, **kw):
-        '''set :attr:`selected_value` to ``val`` and center on it. If
+        """set :attr:`selected_value` to ``val`` and center on it. If
         :attr:`selected_value` is already ``val``, return False; else return
-        True.'''
+        True."""
         if self.selected_value == val:
             return False
         self.selected_value = val
@@ -457,7 +457,7 @@ class Roulette(Tickline):
 
 
 class CyclicRoulette(Roulette):
-    '''roulette for displaying cyclic values.'''
+    """roulette for displaying cyclic values."""
     tick_cls = ObjectProperty(CyclicSlot)
 
     cycle = NumericProperty(10)
@@ -494,7 +494,7 @@ class CyclicRoulette(Roulette):
 
 
 class TimeFormatCyclicRoulette(CyclicRoulette):
-    '''formatted roulette for displaying time.'''
+    """formatted roulette for displaying time."""
     zero_indexed = BooleanProperty(True)
     format_str = StringProperty('{:02d}')
 

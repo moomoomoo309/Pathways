@@ -1,18 +1,18 @@
-'''
+"""
 Tickline
 ========
 
 The :class:`Tickline` widget is designed to display a stream of measured data.
 
-For example, a ruler-like :class:`Tickline` can 
+For example, a ruler-like :class:`Tickline` can
 display a tick every 10 pixels. A timeline-like :class:`Tickline` can display
-dates and hours. If you have some 2-dimensional data, you can also use 
+dates and hours. If you have some 2-dimensional data, you can also use
 :class:`Tickline` to graph it against ticks demarcating some interval.
 
-What makes :class:`Tickline` amazing is the ability to zoom and pan, and 
-automatically adjust the ticks displayed in response to changing scale. 
-If my tickline has multiple ticks, the ticks that are too fine will not 
-be displayed. If I zoom in too much, I can always scroll it to see other parts 
+What makes :class:`Tickline` amazing is the ability to zoom and pan, and
+automatically adjust the ticks displayed in response to changing scale.
+If my tickline has multiple ticks, the ticks that are too fine will not
+be displayed. If I zoom in too much, I can always scroll it to see other parts
 of the tickline.
 
 Usage
@@ -21,7 +21,7 @@ Usage
 A :class:`Tickline` by itself doesn't display anything other than perhaps
 a line along its direction. It needs to be given :class:`Tick`s to draw. The
 attribute :attr:`Tickline.ticks` contains a list of :class:`Tick`s that will
-be displayed. 
+be displayed.
 
 Here is a simple example that will display ticks with integer labels::
 
@@ -32,32 +32,32 @@ though. The following is a :class:`Tickline` that displays ticks with intervals
 of 1, 1/5, and 1/10::
 
     Tickline(ticks=[Tick(), Tick(scale_factor=5.), Tick=(scale_factor=10.)])
-    
-You may notice that the :class:`Tick`s all label themselves by their *own* 
+
+You may notice that the :class:`Tick`s all label themselves by their *own*
 numbers, instead of, for example, the 1/5 tick labelling by 1/5 and the 1/10
 tick labelling by 1/10. The 1/5, 2/5, 3/5, ... or 1/10, 2/10, ... would be
 the *global indices* of the ticks. By default, however, the ticks are labelled
-by *local indices*. This can be changed by setting :attr:`Tick.label_global` 
-to True. 
+by *local indices*. This can be changed by setting :attr:`Tick.label_global`
+to True.
 
 A setting of interest may be :attr:`Tick.offset`, which causes the :class:`Tick`
-to be draw at local indices ``..., offset - 2, offset - 1, offset, 
+to be draw at local indices ``..., offset - 2, offset - 1, offset,
 offset + 1, offset + 2, ...``.
 
-Whether the tick*line* is displayed can be toggled with 
+Whether the tick*line* is displayed can be toggled with
 :attr:`Tickline.draw_line`, and its position can be set via
 :attr:`Tickline.line_offset` and :attr:`Tickline.line_pos`. Other attributes
-like :attr:`Tickline.line_color`, :attr:`Tickline.line_width`, 
+like :attr:`Tickline.line_color`, :attr:`Tickline.line_width`,
 and :attr:`Tickline.background_color` do what their names suggest to do.
 
-If the tick*line* is drawn, the settings :attr:`Tick.halign` and 
+If the tick*line* is drawn, the settings :attr:`Tick.halign` and
 :attr:`Tick.valign` can be used to specify where the tick is rendered. In short,
 if the line is vertical, then ``halign`` is used, and can be one of
 'left', 'right', 'line_left', 'line_right'. If the line is horizontal, then
-``valign`` is used, and can be one of 'top', 'bottom', 'line_top', 
+``valign`` is used, and can be one of 'top', 'bottom', 'line_top',
 
 If you'd like not to label a set of ticks, for example, like the milimeter ticks
-on a typical ruler, then use :class:`LabellessTick`. 
+on a typical ruler, then use :class:`LabellessTick`.
 
 If you'd like to draw ticks for only some numbers, use :class:`DataListTick`.
 
@@ -73,8 +73,8 @@ To put it all together::
                     ],
              orientation='horizontal',
              backward=True)
-            
-Here's a :class:`Tickline` with 4 ticks drawn; 
+
+Here's a :class:`Tickline` with 4 ticks drawn;
 the first set with interval of 1, the second, 1/5, the third, 1/25, and
 the final set has ticks at the local indices provided by the list (so in
 terms of global indices, the ticks are drawn at -0.3/5, 1/5, 1.5/5, etc).
@@ -84,7 +84,7 @@ and runs from right to left. The tick*line* is centered in the middle of the
 widget, and the :class:`DataListTick` sit on top of the line.
 
 In addition to the attributes introduced above, :attr:`Tickline.min_index`,
-:attr:`Tickline.max_index`, :attr:`Tickline.min_scale`, and 
+:attr:`Tickline.max_index`, :attr:`Tickline.min_scale`, and
 :attr:`Tickline.max_scale` can be used to limit the sections of the Tickline
 that can be shown, and how much can be zoomed in or out.
 
@@ -93,23 +93,23 @@ Customizations
 
 There are 4 recommended extension points with regard to :class:`Tick` and
 :class:`Tickline` in order of least to most change:
-:meth:`Tick.draw`, :meth:`Tick.tick_iter`, :meth:`Tick.display`, and 
+:meth:`Tick.draw`, :meth:`Tick.tick_iter`, :meth:`Tick.display`, and
 :meth:`Tickline.redraw_`. These 4 methods form the gist of redrawing operation.
 In simple terms, :meth:`Tickline.redraw_` calls :meth:`Tick.display` for each
 tick in :attr:`Tickline.ticks`. ``display`` then calls :meth:`Tick.tick_iter`
 to obtain an iterator of relevant information regarding the list of ticks
 that should be shown, and hands off each individual info to :meth:`Tick.draw`
-to compute the graphics. 
+to compute the graphics.
 
 A possible extension is to draw triangle ticks instead
 of rectangles. In this case, overriding :meth:`Tick.draw` is most appropriate.
-Another extension can be drawing a timeline, in which case 
-:meth:`Tick.tick_iter` may be overriden to produce information about  
+Another extension can be drawing a timeline, in which case
+:meth:`Tick.tick_iter` may be overriden to produce information about
 datetimes instead of plain global indices for ease of logic handling.
 
 :class:`Tick`'s underlying drawing utilizes Mesh to ensure smooth graphics,
 but this may not be appropriate for certain visuals. To change this behavior,
-overriding :meth:`Tick.display` can be appropriate. 
+overriding :meth:`Tick.display` can be appropriate.
 
 Finally, if major changes to how :class:`Tickline` works are necessary,
 override :meth:`Tickline.redraw_`. However, for most cases, it is recommended
@@ -129,8 +129,8 @@ Graphics
     A custom background image maybe inserted as BorderImage by giving
     :attr:`Tickline.background_image` the path to the image.
     :attr:`Tickling.border` adjusts the borders parameter to the BorderImage.
-    
-    By default, there's no background image, but a Rectangle with 
+
+    By default, there's no background image, but a Rectangle with
     :attr:`Tickline.background_color` covers the background. This can be
     turned off via :attr:`Tickline.cover_background`.
 
@@ -140,60 +140,61 @@ Hack it!
 The technology behind :class:`Tickline` is actually quite versatile, and
 it's possible to use it to build seemingly unrelated things. For example,
 a selection wheel like in iOS has been created by subclassing it.
-'''
+"""
 
 __version__ = '0.1.1'
 
 from bisect import bisect_left, bisect
+from math import ceil, floor
+
 from kivy.clock import Clock
 from kivy.core.text import Label as CoreLabel
 from kivy.effects.dampedscroll import DampedScrollEffect
 from kivy.graphics import InstructionGroup, Mesh
 from kivy.graphics.context_instructions import Color
+from kivy.graphics.vertex_instructions import BorderImage
 from kivy.graphics.vertex_instructions import Rectangle, Line
-from kivy.metrics import dp, sp
+from kivy.metrics import dp
 from kivy.properties import ListProperty, NumericProperty, OptionProperty, \
     ObjectProperty, BoundedNumericProperty, BooleanProperty, AliasProperty, \
     DictProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
 from kivy.uix.stencilview import StencilView
 from kivy.uix.widget import Widget
 from kivy.vector import Vector
-from math import ceil, floor
-from kivy.graphics.vertex_instructions import BorderImage
+
 
 class TickLabeller(Widget):
-    '''handles labelling and/or custom graphics for a :class:`Tickline`. 
-    
+    """handles labelling and/or custom graphics for a :class:`Tickline`.
+
     Often, when there are multiple :class:`Tick`s drawn on a :class:`Tickline`,
     labelling can become messy. For example, if a major tick coincides with
     a minor tick, without some customization of display logic, the major
     label will sit on top of the minor label. The :class:`TickLabeller` is
     designed to centralize tick information and elegantly handle labelling
     and/or custom graphics.
-    
-    Its work cycle corresponds to each :meth:`~Tickline.redraw`. 
-    
-    At the start of redraw, the method :meth:`re_init` is called. This should 
-    set up the :class:`TickLabeller` for a new round of labelling. 
-    
-    During the redraw, ticks that need to be labelled should called 
+
+    Its work cycle corresponds to each :meth:`~Tickline.redraw`.
+
+    At the start of redraw, the method :meth:`re_init` is called. This should
+    set up the :class:`TickLabeller` for a new round of labelling.
+
+    During the redraw, ticks that need to be labelled should called
     :meth:`register` to register the relevant information for rendering
     a label.
-    
+
     Finally, at the end of redraw, :class:`Tickline` calls :meth:`make_labels`
     to produce the labels. Note that it is not required to reproduce labels
     in :meth:`make_labels` at every run, or to delay the production of labels
     to :meth:`make_labels` --- it is entirely possible to label on demand
-    in :meth:`register`. 
-    
-    As a generic labeller, :class:`TickLabeller` only seeks to prevent 
+    in :meth:`register`.
+
+    As a generic labeller, :class:`TickLabeller` only seeks to prevent
     overlapping labels. It still relies on the :class:`Tick`s to produce
     the actual label texture through :meth:`Tick.get_label_texture`.
-    
+
     A class can inherit from this or just ducktype to be used similarly
-    with :class:`Tickline` and :class:`Tick`.'''
+    with :class:`Tickline` and :class:`Tick`."""
     
     def __init__(self, tickline, **kw):
         super(TickLabeller, self).__init__(**kw)
@@ -201,8 +202,8 @@ class TickLabeller(Widget):
         self.registrar = {}
         
     def re_init(self, *args):
-        '''method for reinitializing and accept registrations from a new
-        redraw. Override if necessary.'''
+        """method for reinitializing and accept registrations from a new
+        redraw. Override if necessary."""
         self.registrar = {}
         
     def register(self, tick, tick_index, tick_info):  
@@ -246,31 +247,31 @@ class TickLabeller(Widget):
         return self.__class__.__name__
     
 class CompositeLabeller(TickLabeller):
-    '''combines multiple labellers into one. 
-    
-    Initialize with an instance of :class:`Tickline` and a dictionary 
+    """combines multiple labellers into one.
+
+    Initialize with an instance of :class:`Tickline` and a dictionary
     containing information regarding what labeller should handle what kind
     of ticks. Specifically, the dict should be keyed by labeller *classes*,
-    and the values should be a list of subclasses of 
-    :class:`Tick` assigned to be handled by the corresponding labeller. 
+    and the values should be a list of subclasses of
+    :class:`Tick` assigned to be handled by the corresponding labeller.
     For example, ``{TickLabeller: [Tick], OtherLabeller: [DataListTick]}``
     would be a valid dict.
-    
+
     .. note::
-        The labellers will on handle ticks of *exactly* those types 
+        The labellers will on handle ticks of *exactly* those types
         specified, i.e. NOT their subtypes as well.
-    
+
     In addition, the last element of each list may be a dict of keyword
     arguments to be passed to the corresponding tick labeller. For example::
-    
-        CompositeLabeller(some_tickline, 
-                        {TickLabeller: [Tick], 
+
+        CompositeLabeller(some_tickline,
+                        {TickLabeller: [Tick],
                          TimeLabeller: [TimeTick, {'date_halign': 'right'}]
                          })
-                         
-    would instantiate the ``TimeLabeller`` as 
+
+    would instantiate the ``TimeLabeller`` as
     ``TimeLabeller(some_tickline, date_halign='right')``.
-    '''
+    """
     def __init__(self, tickline, labellers):
         self.tickline = tickline
         self.init_designater(labellers)
@@ -301,7 +302,7 @@ class CompositeLabeller(TickLabeller):
             labeller.make_labels()
         
 class Tickline(StencilView):
-    '''See module documentation for details.'''
+    """See module documentation for details."""
     #===========================================================================
     # visual attributes
     #===========================================================================
@@ -658,22 +659,22 @@ class Tickline(StencilView):
         return True
         
     def pos2index(self, pos, window=False):
-        '''converts a position coordinate along the tickline direction to its
+        """converts a position coordinate along the tickline direction to its
         index. If ``window`` is given as True, then the coordinate is assumed
-        to be a window coordinate.'''
+        to be a window coordinate."""
         return self.index_0 + \
             self.dir * float(pos - window * self.pos0) / self.scale 
         
     def index2pos(self, index, i0=None, i1=None, i_mid=None):
-        '''returns the position of a index (the global index, not a localized
+        """returns the position of a index (the global index, not a localized
         tick index), even if out of screen, based on the current :attr:`index_0`
         , :attr:`index_1`, and :attr:`line_length`. Optionally, ``i0`` and/or
         ``i1`` can be given to replace respectively :attr:`index_0` and
         :attr:`index_1` in the calculation.
-        
+
         .. note::
             the absolute position (relative to the window) is given.
-            
+
         :param index: index to be converted to pos
         :param i0: the ``index_0`` corresponding to the situation in which
             we want to translate ``index`` to a position. By default we
@@ -682,29 +683,29 @@ class Tickline(StencilView):
             we want to translate ``index`` to a position. By default we
             use :attr:`index_1`.
         :param i_mid: The middle index, halfway between ``i0`` and ``i1``.
-            If this is given, then ``i0`` and ``i1`` are calculated from 
+            If this is given, then ``i0`` and ``i1`` are calculated from
             ``i_mid`` using the current :attr:`scale`.
-         ''' 
+         """
         if i_mid is not None:
             i0 = i_mid - float(self.line_length) / 2 / self.scale * self.dir
             i1 = i_mid + float(self.line_length) / 2 / self.scale * self.dir
         else:
             i0, i1 = i0 or self.index_0, i1 or self.index_1
         return float(i0 - index) / (i0 - i1) * self.line_length + self.pos0
-        
-    def calc_intercept(self, anchor, antianchor, to_window=False): 
-        '''given 2 points ``anchor`` and ``antianchor`` (that usually
-        represent 2 touches), 
+
+    def calc_intercept(self, anchor, antianchor, to_window=False):
+        """given 2 points ``anchor`` and ``antianchor`` (that usually
+        represent 2 touches),
         find the point on the Tickline that should be fixed through out
         a scatter operation.
-        
+
         If ``to_window`` is given as True, the resulting coordinate is
         returned as a window coordinate. Otherwise, by default, the coordinate
         returned is with respect to this widget.
-        
+
         .. note::
             ``anchor`` and ``antianchor`` are assumed to have window coordinates.
-        '''
+        """
         
         if self.is_vertical():
             return (anchor.y + antianchor.y) / 2 - (1 - to_window) * self.pos0
@@ -937,15 +938,16 @@ class Tickline(StencilView):
             
         if self.collide_point(x, y):
             return True
-        
-class Tick(Widget): 
-    '''an object that holds information about a set of ticks to be drawn
+
+
+class Tick(Widget):
+    """an object that holds information about a set of ticks to be drawn
     into a :class:`Tickline`.
-    
+
     .. note::
         The graphics handling here is based on Mesh to enable quick drawing.
         for more complex_ graphics this may be overriden in a subclass,
-        or use a custom TickLabeller to handle visuals.'''
+        or use a custom TickLabeller to handle visuals."""
     
     #===========================================================================
     # public attributes 
@@ -1027,42 +1029,42 @@ class Tick(Widget):
         self._color.rgba = self.tick_color
 
     def scale(self, sc):
-        '''returns the spacing between ticks, given the global scale of 
+        """returns the spacing between ticks, given the global scale of
         a :class:`Tickline`.
-        
-        :param sc: the :attr:`~Tickline.scale` of the :class:`Tickline` 
-            this Tick belongs to'''
+
+        :param sc: the :attr:`~Tickline.scale` of the :class:`Tickline`
+            this Tick belongs to"""
         return float(sc) / float(self.scale_factor)
     
     def unscale(self, tick_sc):
-        '''reverse of :meth:`scale`.
-        
+        """reverse of :meth:`scale`.
+
         :param tick_sc: the scale of this Tick to be scaled back to the global
             scale of the :class:`Tickline` this Tick belongs to.
-        '''
+        """
         return float(tick_sc) * float(self.scale_factor)
     
     def localize(self, index):
-        '''turn a global index of :class:`Tickline` to the index used by
+        """turn a global index of :class:`Tickline` to the index used by
         this Tick.
-        
+
         :param index: a global index of the :class:`Tickline` this Tick
             belongs to.
-        '''
+        """
         return index * self.scale_factor
     
     
     def get_label_texture(self, index, **kw):
-        '''
-        Return a label *texture* for a tick given its ordinal position. 
+        """
+        Return a label *texture* for a tick given its ordinal position.
         Return None if there shouldn't be a label at ``index``. This method
         should optimized for quickly drawing labels on screen.
-        
-        :param index: the ordinal number of a tick from the 0th tick, 
+
+        :param index: the ordinal number of a tick from the 0th tick,
             which is the tick that would have global index 0
             if it were the first visible tick.
         :param kw: keyword args passed to Label
-        '''        
+        """
         kw['font_size'] = self.tick_size[1] * 2
         label = CoreLabel(
             text=str(index / (self.label_global and self.scale_factor or 1)),
@@ -1086,25 +1088,25 @@ class Tick(Widget):
     
         
     def tick_iter(self, tickline):
-        '''generates tick information for graphing and labeling in an iterator.
-        By default, calls :meth:`tick_pos_index_iter` to return a pair 
+        """generates tick information for graphing and labeling in an iterator.
+        By default, calls :meth:`tick_pos_index_iter` to return a pair
         consisting of the position on screen and the localized tick index
         of the tick to be drawn.
-        
+
         ..note::
             In general, the iterator should generate all the tick information
             for ticks to be drawn on screen. This in most cases would also
             include ticks just out of screen, but needs to be drawn partially.
-        '''
+        """
         return self.tick_pos_index_iter(tickline)
     
     def tick_pos_index_iter(self, tl):
-        '''given the parent :class:`Tickline` of this Tick, return an iterator
+        """given the parent :class:`Tickline` of this Tick, return an iterator
         of the positions and (localized) indices that correspond to ticks
         that should be drawn.
-        
+
         :param tl: :class:`Tickline` that this Tick belongs to.
-        '''
+        """
         
         tick_index, tick_pos, tick_sc = \
             self._get_index_n_pos_n_scale(tl, True)
@@ -1119,9 +1121,9 @@ class Tick(Widget):
         raise StopIteration
     
     def display(self, tickline):
-        '''main method for displaying Ticks. This is called after every
+        """main method for displaying Ticks. This is called after every
         scatter transform. Uses :attr:`draw` to handle actual drawing.
-        '''
+        """
         mesh = self._mesh
         self._vertices = []
         for tick_info in self.tick_iter(tickline):
@@ -1131,28 +1133,28 @@ class Tick(Widget):
         mesh.indices = indices
         
     def draw(self, tickline, tick_info):
-        '''Given information about a tick, present in on screen. May be 
-        overriden to provide customized graphical representations, for 
+        """Given information about a tick, present in on screen. May be
+        overriden to provide customized graphical representations, for
         example, to graph a set of points.
         Uses :attr:`Tickline.labeller` to handle labelling.
-        
+
         :param tickline: a :class:`Tickline` instance.
         :param tick_info: an object holding information about the tick to be
             drawn. By default, it's a pair holding the position and the index
-            of the tick. Should be overriden as necessary. 
-        '''        
+            of the tick. Should be overriden as necessary.
+        """
         tick_pos, tick_index = tick_info
         tick_rect = self.draw_tick(tickline, tick_pos)
         tickline.labeller.register(self, tick_index, tick_rect)
         
     
     def globalize(self, tick_index):
-        '''convert a index of this Tick to the global index used in the
+        """convert a index of this Tick to the global index used in the
         :class:`Tickline` this Tick belongs to. Note that the returned value
-        is a float, since most likely ``tick_index`` refers to a fractional 
+        is a float, since most likely ``tick_index`` refers to a fractional
         tick.
         :param tick_index: the index of this Tick to be converted
-        '''
+        """
         return float(tick_index) / self.scale_factor
     
     def draw_tick(self, tickline, tick_pos, return_only=False):
@@ -1199,18 +1201,18 @@ class Tick(Widget):
     #===========================================================================
     # private methods
     #===========================================================================
-    def _get_index_n_pos_n_scale(self, tickline, extended=False):    
-        ''' utility function for getting the first tick index and position
+    def _get_index_n_pos_n_scale(self, tickline, extended=False):
+        """ utility function for getting the first tick index and position
          at the bottom of the screen, along with the localized scale of the Tick.
-         
-         If ``extended``, gives index and position for a tick just below the 
+
+         If ``extended``, gives index and position for a tick just below the
          screen, as determined by :attr:`Tickline.densest_tick`.
-         
+
          :param tickline: a :class:`Tickline` instance, usually the one this
              Tick draws on.
          :param extended: flag for giving tick information for just below
              the display area. Defaults to False
-         '''
+         """
         tick_sc = self.scale(tickline.scale)
         if extended:
             index_0 = self.extended_index_0(tickline)
@@ -1224,13 +1226,13 @@ class Tick(Widget):
                     tickline.scale * tickline.dir
         return tick_index, tick_pos, tick_sc
     def _index_condition(self, tickline, extended=False):
-        '''If ``extended``, 
+        """If ``extended``,
         returns a boolean functional that returns True iff the input is a
         localized tick index within the range displayable on screen, or just
         one above or below.
-        
-        Otherwise, the returned functional returns True iff the input is 
-        strictly on screen'''
+
+        Otherwise, the returned functional returns True iff the input is
+        strictly on screen"""
         
         if extended:
             index_0 = self.extended_index_0(tickline)
@@ -1247,18 +1249,18 @@ class Tick(Widget):
             return lambda idx: index_0 <= idx <= index_1        
     
 class LabellessTick(Tick):
-    '''same thing as :class:`Tick`, except no labels. Commonly used as
-    the finest set of ticks.'''
+    """same thing as :class:`Tick`, except no labels. Commonly used as
+    the finest set of ticks."""
 
     def get_label_texture(self, *args, **kw):
         return None
     
 class DataListTick(Tick):
-    '''takes a sorted list of tick indices and displays ticks at those marks.
-    
+    """takes a sorted list of tick indices and displays ticks at those marks.
+
     Note that because likely the tick indices will not be at regular intervals,
-    :attr:`min_label_space` is set to 0 by default. Adjust it to your own 
-    liking.'''
+    :attr:`min_label_space` is set to 0 by default. Adjust it to your own
+    liking."""
 
     data = ListProperty([])
     '''assumed to be sorted least to greatest; otherwise tick drawing

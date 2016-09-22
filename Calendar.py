@@ -3,24 +3,24 @@ from __future__ import print_function
 from calendar import monthrange
 from copy import deepcopy
 from datetime import date, timedelta
-from datetime import datetime
+from math import sqrt, ceil
 from os.path import isfile
 from random import randint
 
 from kivy.core.window import Window
 from kivy.graphics import Rectangle, Color
 from kivy.graphics.instructions import InstructionGroup
+from kivy.lang import Builder
 from kivy.properties import BooleanProperty, BoundedNumericProperty, ObjectProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.image import AsyncImage
+from kivy.uix.popup import Popup
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.widget import Widget
-from kivy.uix.popup import Popup
-from kivy.lang import Builder
 
 import Globals
 from AsyncImageButton import AsyncImageButton
@@ -132,6 +132,7 @@ class Calendar30Days(Widget):
 
             def addDayEvent(event):
                 event.fullSize = False
+                event.shorten = True
                 event.size = [i + 5 for i in event.texture_size]
                 event.bind(texture_size=lambda inst, texture_size: setattr(inst, "size", [i + 5 for i in texture_size]))
                 dayLayout.add_widget(event)
@@ -141,12 +142,9 @@ class Calendar30Days(Widget):
                     copiedEvent = event.copy(fullSize=False, autoSize=False)
                     copiedEvent.size_hint = (None, None)
                     addDayEvent(copiedEvent)
-            exampleEvent = Event(name="?", size_hint_x=None, size_hint_y=None, color=(0, 0, 0, 1),
-                background_color=Globals.PrimaryColor[0:3] + [.5])
-            addDayEvent(exampleEvent)
             if self.startDate + timedelta(days=i) == self.selectedDate:
                 btn.text = "[color=" + (
-                "FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor[0:3] + [.5]) else "000000") + btn.text[
+                    "FFFFFF" if shouldUseWhiteText(Globals.PrimaryColor[0:3] + [.5]) else "000000") + btn.text[
                            13:]
                 btn.background_color = Globals.PrimaryColor[0:3] + [0]
                 Globals.redraw.append(
@@ -224,11 +222,15 @@ class DayGUI(Popup):
     def __init__(self, *args, **kwargs):
         super(DayGUI, self).__init__(**kwargs)
         self.title = ""
+        self.layout = GridLayout(rows=2)
+        self.layout.bind(children=lambda inst, children: setattr(self.layout, "rows", int(ceil(sqrt(len(children))))))
+        self.children[0].children[0].add_widget(self.layout)
         for i in args[0]().children:
             if isinstance(i, Event):
-                self.children[0].children[0].add_widget(EventGUI(lambda: i, size_hint=(.85, 1), dismiss=self.dismiss))
+                self.layout.add_widget(EventGUI(lambda: i, size_hint=(.85, 1), dismiss=self.dismiss))
 
 
+# noinspection PyTypeChecker,PyTypeChecker,PyTypeChecker,PyTypeChecker
 class CalendarLessThan30Days(Widget):
     # Number of days in this calendar
     days = BoundedNumericProperty(7, min=1, max=7)
@@ -408,24 +410,17 @@ class CalendarLessThan30Days(Widget):
             def timeToPos(time):  # Returns the y value of an event at the given time.
                 return 1 - (1.6 / 24 + float(time.hour - 1. + time.minute / 60) / 24.)
 
-            # Test Widget
-            testEvent = Event(size_hint_y=float(self.eventHeight) / self.bodyLayout.height, x=1,
-                pos_hint={"center_y": timeToPos(datetime.now())}, autoSize=False,
-                name="TestButton" + str(i), background_normal="CalendarInactive.png",
-                background_down="CalendarInactive.png", fullSize=True, description="test test test test test test test",
-                color=(1, 1, 1, 1) if shouldUseWhiteText(Globals.PrimaryColor) else (0, 0, 0, 1))
-
             def add_event(event):
                 self.dayList[i].bind(width=lambda inst, width: setattr(event, "width", width - 1))
                 event.size_hint = (None, None)
+                event.width = self.dayList[i].width
                 Globals.redraw.append((event, lambda inst: setattr(inst, "background_color", Globals.PrimaryColor)))
                 Globals.redraw.append((event, lambda inst: setattr(inst, "color", (1, 1, 1, 1) if shouldUseWhiteText(
                     Globals.PrimaryColor) else (0, 0, 0, 1))))
                 event.pos_hint = {"center_y": timeToPos(event.start)}
-                event.size_hint_y=float(self.eventHeight) / self.bodyLayout.height
+                event.size_hint_y = float(self.eventHeight) / self.bodyLayout.height
                 self.dayList[i].add_widget(event)
 
-            add_event(testEvent)
             if self.startDate + timedelta(days=i) in Globals.eventList:
                 for localEvent in Globals.eventList[self.startDate + timedelta(days=i)]:
                     add_event(localEvent.copy(fullSize=True, autoSize=False))

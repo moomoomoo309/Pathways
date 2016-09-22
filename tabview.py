@@ -2,13 +2,12 @@ from calendar import calendar
 from datetime import date, datetime
 
 from kivy.animation import Animation, AnimationTransition
-from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.graphics import Color
 from kivy.graphics.instructions import InstructionGroup
 from kivy.graphics.vertex_instructions import Rectangle
-from kivy.properties import AliasProperty, BoundedNumericProperty, partial
+from kivy.properties import AliasProperty, BoundedNumericProperty
 from kivy.uix.button import Button
 from kivy.uix.carousel import Carousel
 from kivy.uix.image import AsyncImage
@@ -377,8 +376,8 @@ class FloatCarousel(Carousel):  # Slightly modified kivy carousel, to integrate 
 
 
 def makeCalWidget(self):  # Initializes the Calendar grid
-    return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1], pos=(0, 0),
-        MonthStart=(date.today().replace(day=1).weekday() + 1) % 7,
+    return Calendar30Days(MonthLength=calendar.monthrange(datetime.now().year, datetime.now().month)[1],
+        MonthStart=(date.today().replace(day=1).weekday() + 1) % 7, pos=(0, 0),
         size=(Window.width, Window.height - self.topBarSize - self.tabSize - self.tabMargin),
         randomImages=Globals.config.getboolean("Real Settings", "randomImages"),
         online=Globals.config.getboolean("Real Settings", "online"))
@@ -407,15 +406,3 @@ def showGradient(self):
     screen.canvas.after.children[len(screen.canvas.after.children) - 1].pos = (0,
     screen.height - rectHeight - app.tabSize * app.floatBarRatio - app.topBarSize - app.tabMargin - app.tabSize * (
         1 - app.floatBarRatio))
-
-
-class tabview(App):
-    def build(self):
-        app = TabView(size=(Window.width, Window.height))
-        Window.bind(size=lambda inst, size: setattr(app, "size", size))
-        app.add_screen(makeCalWidget(app))
-        return app
-
-
-if __name__ == "__main__":
-    tabview().run()

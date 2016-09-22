@@ -23,15 +23,16 @@ widgets bigger you can just decrease inner_radius_hint.
 
 __all__ = ('CircularLayout')
 
-from kivy.uix.layout import Layout
+from math import sin, cos, pi, radians
+
 from kivy.properties import NumericProperty, ReferenceListProperty, OptionProperty, \
                             BoundedNumericProperty, VariableListProperty, AliasProperty
-from math import sin, cos, pi, radians, degrees
+from kivy.uix.layout import Layout
 
 
 class CircularLayout(Layout):
-    '''Circular layout class. See module documentation for more information.
-    '''
+    """Circular layout class. See module documentation for more information.
+    """
 
     padding = VariableListProperty([0, 0, 0, 0])
     '''Padding between the layout box and it's children: [padding_left,
