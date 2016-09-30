@@ -1,6 +1,7 @@
 #:kivy 1.9
 
 #:import calendar calendar
+#:import getMonthLength DatePicker.getMonthLength
 #:import date datetime.date
 #:import datetime datetime.datetime
 #:import MonthCyclicRoulette eventCreationGUI.MonthCyclicRoulette
@@ -92,7 +93,7 @@
     orientation: "horizontal"
     id: layout
     size_hint_y: 3
-    date: datetime(year=yearpicker.selected_value, month=int(abs(monthpicker.selected_value))%max(len(monthpicker.values),1)+1, day=daypicker.selected_value, hour=(timepicker.hours)%12+(12 if not timepicker._am else 0), minute=timepicker.minutes)
+    date: datetime(year=yearpicker.selected_value, month=int(abs(monthpicker.selected_value))%max(len(monthpicker.values),1)+1, day=min(daypicker.selected_value,getMonthLength(int(abs(monthpicker.selected_value))%max(len(monthpicker.values),1)+1,yearpicker.selected_value)), hour=(timepicker.hours)%12+(12 if not timepicker._am else 0), minute=timepicker.minutes)
     Label:
         halign: "center"
         valign: "middle"
